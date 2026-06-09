@@ -9,8 +9,8 @@ public class ThemeConfig {
     public static final Color BG_SIDEBAR  = new Color(0x13, 0x12, 0x2A);
     public static final Color BG_CARD     = new Color(0x25, 0x24, 0x40);
     public static final Color BG_TABLE    = new Color(0x1E, 0x1D, 0x38);
-    public static final Color ACCENT      = new Color(0xD4, 0xA8, 0x43); // gold
-    public static final Color ACCENT_TEXT = new Color(0x1C, 0x1B, 0x2E); // dark (text on gold)
+    public static final Color ACCENT      = new Color(0xD4, 0xA8, 0x43); 
+    public static final Color ACCENT_TEXT = new Color(0x1C, 0x1B, 0x2E); 
     public static final Color TEXT_HEAD   = new Color(0xEE, 0xE8, 0xD0);
     public static final Color TEXT_BODY   = new Color(0xC0, 0xBD, 0xD8);
     public static final Color TEXT_MUTED  = new Color(0x7A, 0x78, 0x98);

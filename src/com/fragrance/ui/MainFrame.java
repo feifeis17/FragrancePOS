@@ -1,5 +1,6 @@
 package com.fragrance.ui;
 
+import com.fragrance.panel.DashboardPanel;
 import com.fragrance.util.Koneksi;
 import com.fragrance.util.SessionManager;
 import com.fragrance.util.ThemeConfig;
@@ -46,87 +47,120 @@ public class MainFrame extends JFrame {
     // SIDEBAR
     // ─────────────────────────────────────────────
     private JPanel buildSidebar() {
-        JPanel sidebar = new JPanel();
-        sidebar.setPreferredSize(new Dimension(210, 0));
-        sidebar.setBackground(ThemeConfig.BG_SIDEBAR);
-        sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
-        sidebar.setBorder(new EmptyBorder(20, 10, 20, 10));
+    JPanel sidebar = new JPanel();
+    sidebar.setPreferredSize(new Dimension(210, 0));
+    sidebar.setBackground(ThemeConfig.BG_SIDEBAR);
+    sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
+    sidebar.setBorder(new EmptyBorder(24, 8, 16, 8));
 
-        // Profil user
-        JLabel lblUser = new JLabel("👤 " + SessionManager.getUsername());
-        lblUser.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        lblUser.setForeground(ThemeConfig.ACCENT);
-        lblUser.setAlignmentX(Component.CENTER_ALIGNMENT);
+    // ── Profil user — tanpa simbol kotak ──
+    JPanel profilePanel = new JPanel();
+    profilePanel.setOpaque(false);
+    profilePanel.setLayout(new BoxLayout(profilePanel, BoxLayout.Y_AXIS));
+    profilePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    profilePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
+    profilePanel.setBorder(new EmptyBorder(0, 10, 0, 0));
 
-        JLabel lblRole = new JLabel(SessionManager.getRole());
-        lblRole.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        lblRole.setForeground(ThemeConfig.TEXT_MUTED);
-        lblRole.setAlignmentX(Component.CENTER_ALIGNMENT);
+    JLabel lblUser = new JLabel(SessionManager.getUsername());
+    lblUser.setFont(new Font("Segoe UI", Font.BOLD, 15));
+    lblUser.setForeground(ThemeConfig.ACCENT);
 
-        JSeparator sep = new JSeparator();
-        sep.setMaximumSize(new Dimension(180, 1));
-        sep.setForeground(new Color(0x3D, 0x3B, 0x60));
+    // Role dibungkus pill kecil
+    JLabel lblRole = new JLabel("  " + SessionManager.getRole() + "  ");
+    lblRole.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+    lblRole.setForeground(ThemeConfig.TEXT_MUTED);
+    lblRole.setBorder(BorderFactory.createLineBorder(new Color(0x3D, 0x3B, 0x60), 1, true));
 
-        sidebar.add(lblUser);
-        sidebar.add(Box.createVerticalStrut(5));
-        sidebar.add(lblRole);
-        sidebar.add(Box.createVerticalStrut(16));
-        sidebar.add(sep);
-        sidebar.add(Box.createVerticalStrut(16));
+    profilePanel.add(lblUser);
+    profilePanel.add(Box.createVerticalStrut(4));
+    profilePanel.add(lblRole);
 
-        // ── Menu items dengan ActionListener ──
-        btnDashboard  = createMenuButton("📊", "Dashboard");
-        btnKatalog    = createMenuButton("🛍️", "Katalog Produk");
-        btnTransaksi  = createMenuButton("🛒", "Transaksi Kasir");
-        btnStokMasuk  = createMenuButton("📦", "Stok Masuk");
-        btnMaster     = createMenuButton("📁", "Master Data");
-        btnLogUser    = createMenuButton("🔐", "Log Aktivitas");
+    // Divider
+    JSeparator sep = new JSeparator();
+    sep.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+    sep.setForeground(new Color(0x2A, 0x28, 0x48));
 
-        // ActionListeners — panel switching
-        btnDashboard.addActionListener(e  -> switchPanel(buildPlaceholder("Dashboard"), "Dashboard Overview", btnDashboard));
-        btnKatalog.addActionListener(e    -> switchPanel(buildPlaceholder("Katalog Produk"), "Katalog Produk", btnKatalog));
-        btnTransaksi.addActionListener(e  -> switchPanel(buildPlaceholder("Transaksi Kasir"), "Transaksi Kasir", btnTransaksi));
-        btnStokMasuk.addActionListener(e  -> switchPanel(buildPlaceholder("Stok Masuk"), "Stok Masuk", btnStokMasuk));
-        btnMaster.addActionListener(e     -> switchPanel(buildPlaceholder("Master Data"), "Master Data", btnMaster));
-        btnLogUser.addActionListener(e    -> switchPanel(buildPlaceholder("Log Aktivitas"), "Log Aktivitas User", btnLogUser));
+    sidebar.add(profilePanel);
+    sidebar.add(Box.createVerticalStrut(16));
+    sidebar.add(sep);
+    sidebar.add(Box.createVerticalStrut(10));
 
-        sidebar.add(btnDashboard);
-        sidebar.add(Box.createVerticalStrut(6));
-        sidebar.add(btnKatalog);
-        sidebar.add(Box.createVerticalStrut(6));
-        sidebar.add(btnTransaksi);
-        sidebar.add(Box.createVerticalStrut(6));
-        sidebar.add(btnStokMasuk);
-        sidebar.add(Box.createVerticalStrut(6));
-        sidebar.add(btnMaster);
-        sidebar.add(Box.createVerticalStrut(6));
-        sidebar.add(btnLogUser);
+    // ── Section: MASTER ──
+    sidebar.add(sectionLabel("MASTER"));
+    btnDashboard = createMenuButton("📊", "Dashboard");
+    btnKatalog   = createMenuButton("🛍️", "Katalog Produk");
+    btnMaster    = createMenuButton("📁", "Master Data");
+    sidebar.add(btnDashboard);
+    sidebar.add(btnKatalog);
+    sidebar.add(btnMaster);
+    sidebar.add(Box.createVerticalStrut(4));
 
-        sidebar.add(Box.createVerticalGlue());
+    // ── Section: TRANSAKSI ──
+    sidebar.add(sectionLabel("TRANSAKSI"));
+    btnTransaksi = createMenuButton("🛒", "Transaksi Kasir");
+    btnStokMasuk = createMenuButton("📦", "Stok Masuk");
+    sidebar.add(btnTransaksi);
+    sidebar.add(btnStokMasuk);
+    sidebar.add(Box.createVerticalStrut(4));
 
-        // Tombol logout
-        JButton btnLogout = createMenuButton("🚪", "Keluar");
-        btnLogout.setBackground(new Color(0x4A, 0x20, 0x20));
-        btnLogout.setForeground(ThemeConfig.DANGER);
-        btnLogout.addActionListener(e -> doLogout());
-        sidebar.add(btnLogout);
+    // ── Section: UTILITAS ──
+    sidebar.add(sectionLabel("UTILITAS"));
+    btnLogUser   = createMenuButton("🔐", "Log Aktivitas");
+    sidebar.add(btnLogUser);
 
-        return sidebar;
-    }
+    // ActionListeners
+   btnDashboard.addActionListener(e ->
+    switchPanel(new DashboardPanel(), "Dashboard Overview", btnDashboard));
+    btnKatalog.addActionListener(e    -> switchPanel(buildPlaceholder("Katalog"),        "Katalog Produk",      btnKatalog));
+    btnMaster.addActionListener(e     -> switchPanel(buildPlaceholder("Master Data"),    "Master Data",         btnMaster));
+    btnTransaksi.addActionListener(e  -> switchPanel(buildPlaceholder("Transaksi"),      "Transaksi Kasir",     btnTransaksi));
+    btnStokMasuk.addActionListener(e  -> switchPanel(buildPlaceholder("Stok Masuk"),     "Stok Masuk",          btnStokMasuk));
+    btnLogUser.addActionListener(e    -> switchPanel(buildPlaceholder("Log Aktivitas"),  "Log Aktivitas User",  btnLogUser));
 
-    private JButton createMenuButton(String icon, String text) {
-        JButton btn = new JButton(icon + "  " + text);
-        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
-        btn.setBackground(ThemeConfig.BG_CARD);
-        btn.setForeground(ThemeConfig.TEXT_HEAD);
-        btn.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 13));
-        btn.setHorizontalAlignment(SwingConstants.LEFT);
-        btn.setFocusPainted(false);
-        btn.setBorderPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setAlignmentX(Component.LEFT_ALIGNMENT);
-        return btn;
-    }
+    sidebar.add(Box.createVerticalGlue());
+
+    // ── Keluar ──
+    JSeparator sepBottom = new JSeparator();
+    sepBottom.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+    sepBottom.setForeground(new Color(0x2A, 0x28, 0x48));
+    sidebar.add(sepBottom);
+    sidebar.add(Box.createVerticalStrut(10));
+
+    JButton btnLogout = createMenuButton("🚪", "Keluar");
+    btnLogout.setForeground(ThemeConfig.DANGER);
+    btnLogout.addActionListener(e -> doLogout());
+    sidebar.add(btnLogout);
+
+    return sidebar;
+}
+
+// Helper — label section kecil
+private JLabel sectionLabel(String text) {
+    JLabel l = new JLabel(text);
+    l.setFont(new Font("Segoe UI", Font.BOLD, 10));
+    l.setForeground(new Color(0x3A, 0x38, 0x60));
+    l.setBorder(new EmptyBorder(10, 14, 4, 0));
+    l.setAlignmentX(Component.LEFT_ALIGNMENT);
+    l.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+    return l;
+}
+
+    // Ganti parameter dari (iconFile, text) kembali ke (icon, text)
+private JButton createMenuButton(String icon, String text) {
+    JButton btn = new JButton("  " + icon + "  " + text);
+    btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+    btn.setBackground(ThemeConfig.BG_SIDEBAR);
+    btn.setForeground(ThemeConfig.TEXT_BODY);
+    btn.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 13)); 
+    btn.setHorizontalAlignment(SwingConstants.LEFT);
+    btn.setFocusPainted(false);
+    btn.setBorderPainted(false);
+    btn.setOpaque(true);
+    btn.setBorder(BorderFactory.createEmptyBorder(0, 6, 0, 0));
+    btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+    btn.setAlignmentX(Component.LEFT_ALIGNMENT);
+    return btn;
+}
 
     // ─────────────────────────────────────────────
     // MAIN CONTENT
@@ -160,24 +194,21 @@ public class MainFrame extends JFrame {
     // PANEL SWITCHING
     // ─────────────────────────────────────────────
     private void switchPanel(JPanel panel, String title, JButton sourceBtn) {
-        // Update header
-        lblHeaderTitle.setText(title);
+    lblHeaderTitle.setText(title);
 
-        // Highlight tombol aktif
-        if (activeBtn != null) {
-            activeBtn.setBackground(ThemeConfig.BG_CARD);
-            activeBtn.setForeground(ThemeConfig.TEXT_HEAD);
-        }
-        sourceBtn.setBackground(ThemeConfig.ACCENT);
-        sourceBtn.setForeground(ThemeConfig.ACCENT_TEXT);
-        activeBtn = sourceBtn;
-
-        // Swap panel
-        contentPanel.removeAll();
-        contentPanel.add(panel, BorderLayout.CENTER);
-        contentPanel.revalidate();
-        contentPanel.repaint();
+    if (activeBtn != null) {
+        activeBtn.setBackground(ThemeConfig.BG_SIDEBAR); 
+        activeBtn.setForeground(ThemeConfig.TEXT_BODY);  
     }
+    sourceBtn.setBackground(ThemeConfig.ACCENT);
+    sourceBtn.setForeground(ThemeConfig.ACCENT_TEXT);
+    activeBtn = sourceBtn;
+
+    contentPanel.removeAll();
+    contentPanel.add(panel, BorderLayout.CENTER);
+    contentPanel.revalidate();
+    contentPanel.repaint();
+}
 
     // Placeholder sementara — nanti diganti ProdukPanel, dll.
     private JPanel buildPlaceholder(String name) {
@@ -190,28 +221,19 @@ public class MainFrame extends JFrame {
         return p;
     }
 
-    // ─────────────────────────────────────────────
-    // RBAC — FIX: Admin lihat semua, bukan sebaliknya
-    // ─────────────────────────────────────────────
+    // RBAC — FIX: 
     private void applyRBAC() {
-        String role = SessionManager.getRole();
-        switch (role) {
-            case "Admin" -> {
-                // Admin: semua menu terlihat, tidak perlu ubah apapun
-            }
-            case "Operator" -> {
-                // Operator: tidak bisa akses Master & Log
-                btnMaster.setVisible(false);
-                btnLogUser.setVisible(false);
-            }
-            case "User" -> {
-                // User (display): hanya Dashboard & Katalog (read-only)
-                btnTransaksi.setVisible(false);
-                btnStokMasuk.setVisible(false);
-                btnMaster.setVisible(false);
-                btnLogUser.setVisible(false);
-            }
-        }
+    String role = SessionManager.getRole();
+
+    if (role.equals("Operator")) {
+        btnMaster.setVisible(false);
+        btnLogUser.setVisible(false);
+    } else if (role.equals("User")) {
+        btnTransaksi.setVisible(false);
+        btnStokMasuk.setVisible(false);
+        btnMaster.setVisible(false);
+        btnLogUser.setVisible(false);
+    }
     }
 
     // ─────────────────────────────────────────────
