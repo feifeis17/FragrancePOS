@@ -237,9 +237,9 @@ public class LoginFrame extends JFrame {
                 } else {
                     SessionManager.setSession(foundId, foundUser, foundRole);
                     SwingUtilities.invokeLater(() -> {
-                        // SINKRONISASI 3: Tahan dulu MainFrame karena belum dibuat, ganti ke Pop-up sukses
+                        
                         JOptionPane.showMessageDialog(null, "Berhasil Login!\nRole Anda: " + foundRole, "Akses Diterima", JOptionPane.INFORMATION_MESSAGE);
-                        // new MainFrame().setVisible(true); // Nanti ini dibuka komennya kalau MainFrame sudah ada
+                        new MainFrame().setVisible(true); 
                         dispose();
                     });
                 }
