@@ -1,5 +1,4 @@
 package com.fragrance.panel;
-
 import com.fragrance.util.Koneksi;
 import com.fragrance.util.ThemeConfig;
 import java.awt.*;
@@ -12,7 +11,6 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-
 public class DashboardPanelx extends JPanel {
 
     private JLabel valTotalProduk, valStokMenipis, valTerjual, valOmzet;
@@ -88,8 +86,6 @@ public class DashboardPanelx extends JPanel {
         JPanel section = new JPanel(new BorderLayout());
         section.setOpaque(false);
         section.setMaximumSize(new Dimension(Integer.MAX_VALUE, 320));
-
-        // Header
         JPanel sectionHeader = new JPanel(new BorderLayout());
         sectionHeader.setOpaque(false);
         sectionHeader.setBorder(new EmptyBorder(0, 0, 10, 0));
@@ -165,7 +161,6 @@ public class DashboardPanelx extends JPanel {
         table.getColumnModel().getColumn(3).setPreferredWidth(100);
         table.getColumnModel().getColumn(4).setPreferredWidth(60);
     }
-
     private JScrollPane wrapTable(JTable table) {
         JScrollPane sp = new JScrollPane(table);
         sp.setBackground(ThemeConfig.BG_TABLE);
@@ -173,7 +168,7 @@ public class DashboardPanelx extends JPanel {
         sp.setBorder(BorderFactory.createLineBorder(new Color(0x2A, 0x28, 0x48), 1, true));
         return sp;
     }
-    private void loadData() {
+     private void loadData() {
         new SwingWorker<Void, Void>() {
             int    totalProduk = 0, stokMenipis = 0, terjual = 0;
             double omzet = 0;

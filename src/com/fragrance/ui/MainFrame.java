@@ -1,6 +1,13 @@
 package com.fragrance.ui;
 
+import com.fragrance.panel.GantiPasswordPanel;
+import com.fragrance.panel.KategoriPanel;
+import com.fragrance.panel.LaporanPanel;
+import com.fragrance.panel.LogUserPanel;
+import com.fragrance.panel.PelangganPanel;
+import com.fragrance.panel.PenjualanPanel;
 import com.fragrance.panel.ProdukPanel;
+import com.fragrance.panel.StokMasukPanel;
 import com.fragrance.panel.SupplierPanel;
 import com.fragrance.util.Koneksi;
 import com.fragrance.util.SessionManager;
@@ -20,7 +27,7 @@ public class MainFrame extends JFrame {
     private JButton activeBtn;
 
     private JButton btnProduk, btnSupplier, btnKategori, btnPelanggan,
-                    btnStokMasuk, btnPenjualan, btnGantiPassword, btnLogUser;
+                    btnStokMasuk, btnPenjualan, btnGantiPassword, btnLogUser,btnLaporan;
 
     //Constructor 
     public MainFrame() {
@@ -94,8 +101,10 @@ public class MainFrame extends JFrame {
         sidebar.add(sectionLabel("TRANSAKSI"));
         btnStokMasuk = createMenuButton("stok",      "Stok Masuk");
         btnPenjualan = createMenuButton("penjualan", "Penjualan");
+        btnLaporan = createMenuButton("report", "Laporan Bisnis");
         sidebar.add(btnStokMasuk);
         sidebar.add(btnPenjualan);
+        sidebar.add(btnLaporan);
         sidebar.add(Box.createVerticalStrut(4));
 
         //UTILITAS
@@ -112,23 +121,22 @@ public class MainFrame extends JFrame {
         btnSupplier.addActionListener(e ->
             switchPanel(new SupplierPanel(), "Data Supplier", "File Master › Supplier", btnSupplier));
         btnKategori.addActionListener(e ->
-            switchPanel(buildPlaceholder("Kategori"), "Data Kategori",
+            switchPanel(new KategoriPanel(), "Data Kategori",
                 "File Master › Kategori", btnKategori));
         btnPelanggan.addActionListener(e ->
-            switchPanel(buildPlaceholder("Pelanggan"), "Data Pelanggan",
-                "File Master › Pelanggan", btnPelanggan));
+            switchPanel(new PelangganPanel(), "Data Pelanggan", "File Master › Pelanggan", btnPelanggan));
         btnStokMasuk.addActionListener(e ->
-            switchPanel(buildPlaceholder("Stok Masuk"), "Stok Masuk",
-                "Transaksi › Stok Masuk", btnStokMasuk));
+    switchPanel(new StokMasukPanel(), "Stok Masuk",
+        "Transaksi › Stok Masuk", btnStokMasuk));
         btnPenjualan.addActionListener(e ->
-            switchPanel(buildPlaceholder("Penjualan"), "Penjualan",
-                "Transaksi › Penjualan", btnPenjualan));
+            switchPanel(new PenjualanPanel(), "Transaksi Kasir", "Transaksi › Penjualan", btnPenjualan));
         btnGantiPassword.addActionListener(e ->
-            switchPanel(buildPlaceholder("Ganti Password"), "Ganti Password",
-                "Utilitas › Ganti Password", btnGantiPassword));
+            switchPanel(new GantiPasswordPanel(), "Ganti Password", "Utilitas › Ganti Password", btnGantiPassword));
         btnLogUser.addActionListener(e ->
-            switchPanel(buildPlaceholder("Log User"), "Log Aktivitas",
-                "Utilitas › Log User", btnLogUser));
+            switchPanel(new LogUserPanel(), "Log Aktivitas User", "Utilitas › Log User", btnLogUser));
+            btnLaporan.addActionListener(e -> 
+    switchPanel(new LaporanPanel(), "Laporan Analitik", "Transaksi › Laporan Bisnis", btnLaporan)
+);
 
         sidebar.add(Box.createVerticalGlue());
 
@@ -321,6 +329,7 @@ public class MainFrame extends JFrame {
             btnPenjualan.setVisible(false);
             btnGantiPassword.setVisible(false);
             btnLogUser.setVisible(false);
+            btnLaporan.setVisible(false);
         }
     }
     // LOGOUT + LOG KE DB
