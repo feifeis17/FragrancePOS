@@ -1,9 +1,6 @@
 # 🌸 FragrancePOS
 
 **FragrancePOS** adalah Sistem Manajemen Stok & Penjualan (Point of Sale) khusus untuk butik parfum, dirancang dengan antarmuka modern (Noir Luxe Theme) dan arsitektur keamanan tingkat tinggi (*Multi-tier Security*). 
-
-Aplikasi ini dikembangkan sebagai Tugas Besar Pemrograman Berorientasi Objek 2 (PBO2) - Teknik Informatika, Universitas Teknologi Bandung (UTB).
-
 ## ✨ Fitur Utama
 * **Multi-tier Security:** Autentikasi berlapis dengan enkripsi *password* menggunakan algoritma SHA-256.
 * **Role-Based Access Control (RBAC):** Pembatasan hak akses sistem berdasarkan *role* pengguna (Admin, Operator, User).
