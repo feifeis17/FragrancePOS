@@ -1,24 +1,26 @@
 package com.fragrance.panel;
 
 import com.fragrance.util.Koneksi;
+import com.fragrance.util.RoundedPanel;
 import com.fragrance.util.SessionManager;
 import com.fragrance.util.ThemeConfig;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.table.*;
 import java.awt.*;
 import java.sql.*;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.List;
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import javax.swing.table.*;
 
 public class ProdukPanel extends JPanel {
 
     private DefaultTableModel tableModel;
     private JTable            table;
     private JTextField        txtSearch;
-    private JLabel valTotal, valMenipis, valBrandNew, valPreloved;
-    private JTextField    txtNama, txtBrand, txtVolume, txtHargaBeli, txtHargaJual, txtStok;
+    private JLabel            valTotal, valMenipis, valTerjual, valOmzet;
+    private JTextField        txtNama, txtBrand, txtVolume, txtHargaBeli, txtHargaJual, txtStok;
     private JComboBox<String> cmbKategori, cmbKondisi;
     private final Map<String, Integer> kategoriMap = new LinkedHashMap<>();
 
@@ -30,91 +32,23 @@ public class ProdukPanel extends JPanel {
         loadStats();
     }
 
-    private JPanel buildMiniStats() {
-    JPanel row = new JPanel(new GridLayout(1, 4, 10, 0));
-    row.setOpaque(false);
-    row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 90));
-    row.setBorder(new EmptyBorder(0, 0, 14, 0));
-
-    valTotal    = statLbl();
-    valMenipis  = statLbl();
-    valBrandNew = statLbl();
-    valPreloved = statLbl();
-
-    row.add(miniCard("Total Produk",   valTotal,    ThemeConfig.TEXT_HEAD));
-    row.add(miniCard("Stok Menipis",   valMenipis,  ThemeConfig.DANGER));
-    row.add(miniCard("Brand New",      valBrandNew, ThemeConfig.SUCCESS));
-    row.add(miniCard("Preloved",       valPreloved, ThemeConfig.WARNING));
-    return row;
-}
-
-private void loadStats() {
-    new SwingWorker<int[], Void>() {
-        @Override protected int[] doInBackground() throws Exception {
-            int[] s = new int[4]; 
-            try (Connection conn = Koneksi.configDB()) {
-                ResultSet r1 = conn.createStatement()
-                    .executeQuery("SELECT COUNT(*) FROM tb_produk");
-                if (r1.next()) s[0] = r1.getInt(1);
-
-                ResultSet r2 = conn.createStatement()
-                    .executeQuery("SELECT COUNT(*) FROM tb_produk WHERE stok <= 5");
-                if (r2.next()) s[1] = r2.getInt(1);
-
-                ResultSet r3 = conn.createStatement()
-                    .executeQuery("SELECT COUNT(*) FROM tb_produk WHERE kondisi='Brand New'");
-                if (r3.next()) s[2] = r3.getInt(1);
-
-                ResultSet r4 = conn.createStatement()
-                    .executeQuery("SELECT COUNT(*) FROM tb_produk WHERE kondisi='Preloved'");
-                if (r4.next()) s[3] = r4.getInt(1);
-            }
-            return s;
-        }
-        @Override protected void done() {
-            try {
-                int[] s = get();
-                valTotal.setText(String.valueOf(s[0]));
-                valMenipis.setText(String.valueOf(s[1]));
-                valBrandNew.setText(String.valueOf(s[2]));
-                valPreloved.setText(String.valueOf(s[3]));
-            } catch (Exception e) { e.printStackTrace(); }
-        }
-    }.execute();
-}
-
-private JLabel statLbl() {
-    JLabel l = new JLabel("—");
-    l.setFont(new Font("Segoe UI", Font.BOLD, 26));
-    return l;
-}
-
-private JPanel miniCard(String title, JLabel val, Color valColor) {
-    JPanel c = new JPanel();
-    c.setLayout(new BoxLayout(c, BoxLayout.Y_AXIS));
-    c.setBackground(ThemeConfig.BG_CARD);
-    c.setBorder(BorderFactory.createCompoundBorder(
-        BorderFactory.createLineBorder(new Color(0x2A, 0x28, 0x48), 1, true),
-        new EmptyBorder(12, 16, 12, 16)));
-    JLabel t = new JLabel(title.toUpperCase());
-    t.setFont(new Font("Segoe UI", Font.PLAIN, 10));
-    t.setForeground(ThemeConfig.TEXT_MUTED);
-    val.setForeground(valColor);
-    c.add(t);
-    c.add(Box.createVerticalStrut(8));
-    c.add(val);
-    return c;
-}
-    // UI
+    // ─────────────────────────────────────────────
+    // UI UTAMA
+    // ─────────────────────────────────────────────
     private void initUI() {
-    JPanel wrap = new JPanel(new BorderLayout(0, 12));
-    wrap.setBackground(ThemeConfig.BG_PRIMARY);
-    wrap.add(buildMiniStats(), BorderLayout.NORTH);
-    wrap.add(buildTopBar(),    BorderLayout.CENTER); // search + tombol
-    
-    add(wrap,             BorderLayout.NORTH);
-    add(buildTableArea(), BorderLayout.CENTER);
-}
+        JPanel wrapTop = new JPanel(new BorderLayout(0, 12));
+        wrapTop.setBackground(ThemeConfig.BG_PRIMARY);
+        wrapTop.add(buildMiniStats(), BorderLayout.NORTH);
+        wrapTop.add(buildTopBar(),    BorderLayout.CENTER);
+        
+        // Membungkus tabel dengan RoundedPanel
+        RoundedPanel roundedTableArea = new RoundedPanel(12, ThemeConfig.BG_TABLE, new Color(0x2A, 0x28, 0x48));
+        roundedTableArea.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2)); 
+        roundedTableArea.add(buildTableArea(), BorderLayout.CENTER);
+
+        add(wrapTop,          BorderLayout.NORTH);
+        add(roundedTableArea, BorderLayout.CENTER);
+    }
 
     private JPanel buildTopBar() {
         JPanel bar = new JPanel(new BorderLayout(10, 0));
@@ -167,8 +101,32 @@ private JPanel miniCard(String title, JLabel val, Color valColor) {
             right.add(btnHapus);
         }
 
-        JButton btnRefresh = outlineButton("↻");
-        btnRefresh.addActionListener(e -> loadData());
+        // Tombol Refresh Pakai PNG & Hover Halus
+        JButton btnRefresh = outlineButton(""); 
+        btnRefresh.setPreferredSize(new Dimension(36, 36)); 
+        btnRefresh.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(0x3D, 0x3B, 0x60), 1, true),
+            BorderFactory.createEmptyBorder(9, 9, 9, 9) 
+        ));
+        ImageIcon icRefreshW = loadScaledIcon("segarkan_w.png", 16);
+        ImageIcon icRefreshG = loadScaledIcon("segarkan_g.png", 16);
+
+        if (icRefreshW != null) {
+            btnRefresh.setIcon(icRefreshW);
+        }
+        btnRefresh.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override public void mouseEntered(java.awt.event.MouseEvent e) {
+                if (icRefreshG != null) btnRefresh.setIcon(icRefreshG);
+            }
+            @Override public void mouseExited(java.awt.event.MouseEvent e) {
+                if (icRefreshW != null) btnRefresh.setIcon(icRefreshW);
+            }
+        });
+
+        btnRefresh.addActionListener(e -> {
+            loadData();
+            loadStats();
+        });
         right.add(btnRefresh);
 
         bar.add(left,  BorderLayout.WEST);
@@ -190,7 +148,7 @@ private JPanel miniCard(String title, JLabel val, Color valColor) {
         JScrollPane sp = new JScrollPane(table);
         sp.setBackground(ThemeConfig.BG_TABLE);
         sp.getViewport().setBackground(ThemeConfig.BG_TABLE);
-        sp.setBorder(BorderFactory.createLineBorder(new Color(0x2A, 0x28, 0x48), 1, true));
+        sp.setBorder(BorderFactory.createEmptyBorder()); // Hilangkan border kaku karena panel luarnya sudah rounded
         return sp;
     }
 
@@ -218,41 +176,42 @@ private JPanel miniCard(String title, JLabel val, Color valColor) {
         };
         for (int i = 1; i <= 4; i++)
             table.getColumnModel().getColumn(i).setCellRenderer(padLeft);
+        
         table.getColumnModel().getColumn(5).setCellRenderer(new DefaultTableCellRenderer() {
-    @Override
-    public Component getTableCellRendererComponent(
-            JTable t, Object val, boolean sel, boolean foc, int row, int col) {
-        int stok = 0;
-        try { stok = Integer.parseInt(t.getValueAt(row, 7).toString()); }
-        catch (Exception ignored) {}
+            @Override
+            public Component getTableCellRendererComponent(
+                    JTable t, Object val, boolean sel, boolean foc, int row, int col) {
+                int stok = 0;
+                try { stok = Integer.parseInt(t.getValueAt(row, 7).toString()); }
+                catch (Exception ignored) {}
 
-        String status  = stok == 0 ? "Habis" : (val != null ? val.toString() : "");
-        Color  fg, bg;
-        if      ("Brand New".equals(status)) { fg = new Color(0x81,0xC9,0x95); bg = new Color(0x1A,0x3A,0x22); }
-        else if ("Preloved" .equals(status)) { fg = new Color(0xF4,0xA2,0x61); bg = new Color(0x3A,0x25,0x10); }
-        else                                 { fg = ThemeConfig.DANGER;         bg = new Color(0x3A,0x15,0x15); }
+                String status  = stok == 0 ? "Habis" : (val != null ? val.toString() : "");
+                Color  fg, bg;
+                if      ("Brand New".equals(status)) { fg = new Color(0x81,0xC9,0x95); bg = new Color(0x1A,0x3A,0x22); }
+                else if ("Preloved" .equals(status)) { fg = new Color(0xF4,0xA2,0x61); bg = new Color(0x3A,0x25,0x10); }
+                else                                 { fg = ThemeConfig.DANGER;        bg = new Color(0x3A,0x15,0x15); }
 
-        JLabel badge = new JLabel(status) {
-            @Override protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(bg);
-                g2.fillRoundRect(4, 4, getWidth()-8, getHeight()-8, 14, 14);
-                g2.dispose();
-                super.paintComponent(g);
+                JLabel badge = new JLabel(status) {
+                    @Override protected void paintComponent(Graphics g) {
+                        Graphics2D g2 = (Graphics2D) g.create();
+                        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                        g2.setColor(bg);
+                        g2.fillRoundRect(4, 4, getWidth()-8, getHeight()-8, 14, 14);
+                        g2.dispose();
+                        super.paintComponent(g);
+                    }
+                };
+                badge.setForeground(fg);
+                badge.setFont(new Font("Segoe UI", Font.BOLD, 11));
+                badge.setHorizontalAlignment(CENTER);
+                badge.setOpaque(false);
+
+                JPanel wrap = new JPanel(new GridBagLayout());
+                wrap.setBackground(sel ? t.getSelectionBackground() : ThemeConfig.BG_TABLE);
+                wrap.add(badge);
+                return wrap;
             }
-        };
-        badge.setForeground(fg);
-        badge.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        badge.setHorizontalAlignment(CENTER);
-        badge.setOpaque(false);
-
-        JPanel wrap = new JPanel(new GridBagLayout());
-        wrap.setBackground(sel ? t.getSelectionBackground() : ThemeConfig.BG_TABLE);
-        wrap.add(badge);
-        return wrap;
-    }
-});
+        });
 
         table.getColumnModel().getColumn(6).setCellRenderer(new DefaultTableCellRenderer() {
             @Override public Component getTableCellRendererComponent(
@@ -280,7 +239,7 @@ private JPanel miniCard(String title, JLabel val, Color valColor) {
                 int stok = val != null ? Integer.parseInt(val.toString()) : 0;
                 l.setForeground(stok == 0 ? ThemeConfig.DANGER
                               : stok <= 5 ? ThemeConfig.WARNING
-                                           : ThemeConfig.SUCCESS);
+                                          : ThemeConfig.SUCCESS);
                 return l;
             }
         });
@@ -288,7 +247,10 @@ private JPanel miniCard(String title, JLabel val, Color valColor) {
         for (int i = 0; i < widths.length; i++)
             table.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
     }
-    // LOAD DATA
+
+    // ─────────────────────────────────────────────
+    // DATA & LOGIKA
+    // ─────────────────────────────────────────────
     private void loadData() {
         new SwingWorker<List<Object[]>, Void>() {
             @Override protected List<Object[]> doInBackground() throws Exception {
@@ -323,6 +285,52 @@ private JPanel miniCard(String title, JLabel val, Color valColor) {
         }.execute();
     }
 
+    private void loadStats() {
+        new SwingWorker<String[], Void>() {
+            @Override protected String[] doInBackground() throws Exception {
+                String[] s = new String[]{"0", "0", "0", "Rp 0"}; 
+                try (Connection conn = Koneksi.configDB();
+                     Statement stmt = conn.createStatement()) {
+                    
+                    ResultSet r1 = stmt.executeQuery("SELECT COUNT(*) FROM tb_produk");
+                    if (r1.next()) s[0] = String.valueOf(r1.getInt(1));
+
+                    ResultSet r2 = stmt.executeQuery("SELECT COUNT(*) FROM tb_produk WHERE stok <= 5");
+                    if (r2.next()) s[1] = String.valueOf(r2.getInt(1));
+
+                    ResultSet r3 = stmt.executeQuery(
+                        "SELECT COALESCE(SUM(dp.qty),0) FROM tb_detail_penjualan dp " +
+                        "JOIN tb_penjualan p ON dp.id_penjualan = p.id_penjualan " +
+                        "WHERE DATE(p.tanggal) = CURDATE()");
+                    if (r3.next()) s[2] = String.valueOf(r3.getInt(1));
+
+                    ResultSet r4 = stmt.executeQuery(
+                        "SELECT COALESCE(SUM(total_harga),0) FROM tb_penjualan " +
+                        "WHERE DATE(tanggal) = CURDATE()");
+                    if (r4.next()) {
+                        double omzet = r4.getDouble(1);
+                        NumberFormat formatRp = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+                        String strOmzet = formatRp.format(omzet).replace(",00", "");
+                        if (omzet >= 1000000) {
+                            strOmzet = String.format("%.1fjt", omzet / 1000000.0).replace(".0jt", "jt");
+                        }
+                        s[3] = strOmzet;
+                    }
+                } catch (Exception e) { e.printStackTrace(); }
+                return s;
+            }
+            @Override protected void done() {
+                try {
+                    String[] s = get();
+                    valTotal.setText(s[0]);
+                    valMenipis.setText(s[1]);
+                    valTerjual.setText(s[2]);
+                    valOmzet.setText(s[3]);
+                } catch (Exception e) { e.printStackTrace(); }
+            }
+        }.execute();
+    }
+
     private void loadKategori() {
         kategoriMap.clear();
         kategoriMap.put("— Pilih Kategori —", 0);
@@ -333,7 +341,7 @@ private JPanel miniCard(String title, JLabel val, Color valColor) {
                 kategoriMap.put(rs.getString("nama_kategori"), rs.getInt("id_kategori"));
         } catch (Exception e) { e.printStackTrace(); }
     }
-    // FORM DIALOG
+
     private void showFormDialog(boolean isEdit) {
         loadKategori();
 
@@ -425,7 +433,7 @@ private JPanel miniCard(String title, JLabel val, Color valColor) {
             }
         } catch (Exception e) { e.printStackTrace(); }
     }
-    // CRUD
+
     private void doSave(JDialog dialog, boolean isEdit) {
         String nama  = txtNama.getText().trim();
         String brand = txtBrand.getText().trim();
@@ -466,6 +474,7 @@ private JPanel miniCard(String title, JLabel val, Color valColor) {
 
             dialog.dispose();
             loadData();
+            loadStats();
             showInfo("Data berhasil disimpan!");
 
         } catch (NumberFormatException e) {
@@ -492,6 +501,7 @@ private JPanel miniCard(String title, JLabel val, Color valColor) {
             ps.setInt(1, id);
             ps.executeUpdate();
             loadData();
+            loadStats();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
                 "Gagal: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -510,7 +520,64 @@ private JPanel miniCard(String title, JLabel val, Color valColor) {
         if (row == -1) return -1;
         return (int) tableModel.getValueAt(table.convertRowIndexToModel(row), 0);
     }
-    // HELPERS
+
+    // ─────────────────────────────────────────────
+    // COMPONENT BUILDERS (LAYOUT)
+    // ─────────────────────────────────────────────
+    private JPanel buildMiniStats() {
+        JPanel row = new JPanel(new GridLayout(1, 4, 16, 0));
+        row.setOpaque(false);
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 90));
+        row.setBorder(new EmptyBorder(0, 0, 14, 0));
+
+        valTotal   = statLbl();
+        valMenipis = statLbl();
+        valTerjual = statLbl();
+        valOmzet   = statLbl();
+
+        // Aksi Navigasi (contoh: Stok Menipis ke Stok Masuk)
+        row.add(miniCard("Total Produk", valTotal, ThemeConfig.TEXT_HEAD, null));
+        row.add(miniCard("Stok Menipis", valMenipis, ThemeConfig.DANGER, () -> {
+            // MainFrame main = (MainFrame) SwingUtilities.getWindowAncestor(this);
+            // main.switchPanel(...); // tambahkan navigasi disini jika diperlukan
+        }));
+        row.add(miniCard("Terjual Hari Ini", valTerjual, ThemeConfig.ACCENT, null));
+        row.add(miniCard("Omzet", valOmzet, new Color(0x81,0xC9,0x95), null));
+        return row;
+    }
+
+    // ─────────────────────────────────────────────
+    // HELPERS & COMPONENT FACTORIES
+    // ─────────────────────────────────────────────
+    private JLabel statLbl() {
+        JLabel l = new JLabel("—");
+        l.setFont(new Font("Segoe UI", Font.BOLD, 26));
+        return l;
+    }
+
+    private JPanel miniCard(String title, JLabel val, Color valColor, Runnable action) {
+        RoundedPanel c = new RoundedPanel(12, ThemeConfig.BG_CARD, new Color(0x2A, 0x28, 0x48));
+        c.setLayout(new BoxLayout(c, BoxLayout.Y_AXIS));
+        c.setBorder(new EmptyBorder(12, 16, 12, 16));
+        
+        if (action != null) {
+            c.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            c.addMouseListener(new java.awt.event.MouseAdapter() {
+                public void mouseClicked(java.awt.event.MouseEvent e) { action.run(); }
+            });
+        }
+        
+        JLabel t = new JLabel(title.toUpperCase());
+        t.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+        t.setForeground(ThemeConfig.TEXT_MUTED);
+        val.setForeground(valColor);
+        
+        c.add(t);
+        c.add(Box.createVerticalStrut(8));
+        c.add(val);
+        return c;
+    }
+
     private JTextField formField() {
         JTextField f = new JTextField();
         f.setPreferredSize(new Dimension(0, 36));
@@ -533,11 +600,34 @@ private JPanel miniCard(String title, JLabel val, Color valColor) {
         return cb;
     }
 
+    private ImageIcon loadScaledIcon(String filename, int size) {
+        try {
+            java.net.URL url = getClass().getResource("/com/fragrance/resources/icons/" + filename);
+            if (url == null) return null;
+            Image img = new ImageIcon(url).getImage().getScaledInstance(size, size, Image.SCALE_SMOOTH);
+            return new ImageIcon(img);
+        } catch (Exception e) { 
+            return null; 
+        }
+    }
+
     private JButton goldButton(String text) {
-        JButton b = new JButton(text);
-        b.setBackground(ThemeConfig.ACCENT);
+        JButton b = new JButton(text) {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                if (getModel().isPressed()) g2.setColor(new Color(200, 150, 40)); 
+                else if (getModel().isRollover()) g2.setColor(new Color(255, 210, 80)); 
+                else g2.setColor(ThemeConfig.ACCENT);
+                
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
         b.setForeground(ThemeConfig.ACCENT_TEXT);
         b.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        b.setContentAreaFilled(false);
         b.setFocusPainted(false);
         b.setBorderPainted(false);
         b.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -546,10 +636,22 @@ private JPanel miniCard(String title, JLabel val, Color valColor) {
     }
 
     private JButton outlineButton(String text) {
-        JButton b = new JButton(text);
-        b.setBackground(ThemeConfig.BG_CARD);
+        JButton b = new JButton(text) {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                if (getModel().isPressed()) g2.setColor(new Color(0x1E, 0x1D, 0x38)); 
+                else if (getModel().isRollover()) g2.setColor(new Color(0x3A, 0x38, 0x60)); 
+                else g2.setColor(ThemeConfig.BG_CARD);
+                
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
         b.setForeground(ThemeConfig.TEXT_BODY);
         b.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        b.setContentAreaFilled(false); 
         b.setFocusPainted(false);
         b.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(0x3D, 0x3B, 0x60), 1, true),
@@ -559,10 +661,22 @@ private JPanel miniCard(String title, JLabel val, Color valColor) {
     }
 
     private JButton dangerButton(String text) {
-        JButton b = new JButton(text);
-        b.setBackground(new Color(0x4A, 0x20, 0x20));
+        JButton b = new JButton(text) {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                if (getModel().isPressed()) g2.setColor(new Color(0x30, 0x10, 0x10)); 
+                else if (getModel().isRollover()) g2.setColor(new Color(0x60, 0x2A, 0x2A)); 
+                else g2.setColor(new Color(0x4A, 0x20, 0x20));
+                
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
         b.setForeground(ThemeConfig.DANGER);
         b.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        b.setContentAreaFilled(false); 
         b.setFocusPainted(false);
         b.setBorderPainted(false);
         b.setCursor(new Cursor(Cursor.HAND_CURSOR));

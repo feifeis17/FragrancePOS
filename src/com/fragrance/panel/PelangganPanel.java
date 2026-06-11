@@ -1,9 +1,9 @@
 package com.fragrance.panel;
 
 import com.fragrance.util.Koneksi;
+import com.fragrance.util.RoundedPanel;
 import com.fragrance.util.SessionManager;
 import com.fragrance.util.ThemeConfig;
-import com.fragrance.util.RoundedPanel;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -13,32 +13,26 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SupplierPanel extends JPanel {
+public class PelangganPanel extends JPanel {
 
     private DefaultTableModel tableModel;
     private JTable            table;
     private JTextField        txtSearch;
-    private JTextField txtNama, txtKontak;
-    private JTextArea txtAlamat;
 
-    public SupplierPanel() {
+    private JTextField txtNama, txtKontak;
+
+    public PelangganPanel() {
         setLayout(new BorderLayout(0, 0));
         setBackground(ThemeConfig.BG_PRIMARY);
         initUI();
         loadData();
     }
-
-    // ─────────────────────────────────────────────
-    // UI SETUP
-    // ─────────────────────────────────────────────
+//ui
     private void initUI() {
         add(buildTopBar(), BorderLayout.NORTH);
-
-        // Menerapkan RoundedPanel untuk tabel
         RoundedPanel roundedTableArea = new RoundedPanel(12, ThemeConfig.BG_TABLE, new Color(0x2A, 0x28, 0x48));
-        roundedTableArea.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
+        roundedTableArea.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2)); // Jarak agar tabel tidak nabrak
         roundedTableArea.add(buildTableArea(), BorderLayout.CENTER);
-        
         add(roundedTableArea, BorderLayout.CENTER);
     }
 
@@ -47,7 +41,6 @@ public class SupplierPanel extends JPanel {
         bar.setOpaque(false);
         bar.setBorder(new EmptyBorder(0, 0, 12, 0));
 
-        // Search Field
         txtSearch = new JTextField();
         txtSearch.setPreferredSize(new Dimension(280, 36));
         txtSearch.setBackground(ThemeConfig.BG_CARD);
@@ -58,7 +51,7 @@ public class SupplierPanel extends JPanel {
             BorderFactory.createLineBorder(new Color(0x3D, 0x3B, 0x60), 1, true),
             BorderFactory.createEmptyBorder(4, 10, 4, 10)
         ));
-        txtSearch.putClientProperty("JTextField.placeholderText", "Cari nama supplier...");
+        txtSearch.putClientProperty("JTextField.placeholderText", "Cari nama / kontak pelanggan...");
         txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             public void insertUpdate(javax.swing.event.DocumentEvent e)  { filterTable(); }
             public void removeUpdate(javax.swing.event.DocumentEvent e)  { filterTable(); }
@@ -78,7 +71,7 @@ public class SupplierPanel extends JPanel {
 
             JButton btnEdit = outlineButton("Edit");
             btnEdit.addActionListener(e -> {
-                if (getSelectedId() == -1) { showInfo("Pilih supplier yang ingin diedit."); return; }
+                if (getSelectedId() == -1) { showInfo("Pilih pelanggan yang ingin diedit."); return; }
                 showFormDialog(true);
             });
 
@@ -90,21 +83,18 @@ public class SupplierPanel extends JPanel {
             right.add(btnHapus);
         }
 
-        // Tombol Refresh dengan Icon PNG + Hover Effect
-        JButton btnRefresh = outlineButton("");
+        JButton btnRefresh = outlineButton(""); 
         btnRefresh.setPreferredSize(new Dimension(36, 36)); 
         btnRefresh.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(0x3D, 0x3B, 0x60), 1, true),
             BorderFactory.createEmptyBorder(9, 9, 9, 9) 
         ));
-
         ImageIcon icRefreshW = loadScaledIcon("segarkan_w.png", 16);
         ImageIcon icRefreshG = loadScaledIcon("segarkan_g.png", 16);
 
         if (icRefreshW != null) {
             btnRefresh.setIcon(icRefreshW);
         }
-
         btnRefresh.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override public void mouseEntered(java.awt.event.MouseEvent e) {
                 if (icRefreshG != null) btnRefresh.setIcon(icRefreshG);
@@ -123,22 +113,21 @@ public class SupplierPanel extends JPanel {
     }
 
     private JScrollPane buildTableArea() {
-        String[] cols = {"ID", "Nama Supplier", "Kontak", "Alamat"};
+        String[] cols = {"ID", "Nama Pelanggan", "Kontak", "Total Transaksi"};
         tableModel = new DefaultTableModel(cols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
 
         table = new JTable(tableModel);
         styleTable();
+
         table.getColumnModel().getColumn(0).setMinWidth(0);
         table.getColumnModel().getColumn(0).setMaxWidth(0);
 
         JScrollPane sp = new JScrollPane(table);
         sp.setBackground(ThemeConfig.BG_TABLE);
         sp.getViewport().setBackground(ThemeConfig.BG_TABLE);
-        
-        // Hapus border kaku karena sudah dibungkus RoundedPanel
-        sp.setBorder(BorderFactory.createEmptyBorder()); 
+        sp.setBorder(BorderFactory.createEmptyBorder());
         return sp;
     }
 
@@ -160,50 +149,61 @@ public class SupplierPanel extends JPanel {
         header.setFont(new Font("Segoe UI", Font.BOLD, 11));
         header.setPreferredSize(new Dimension(0, 38));
 
+        table.getColumnModel().getColumn(1).setCellRenderer(new DefaultTableCellRenderer() {
+            { setBorder(new EmptyBorder(0, 14, 0, 0)); setBackground(ThemeConfig.BG_TABLE); }
+            @Override public Component getTableCellRendererComponent(
+                    JTable t, Object val, boolean sel, boolean foc, int r, int c) {
+                JLabel l = (JLabel) super.getTableCellRendererComponent(t, val, sel, foc, r, c);
+                l.setForeground(ThemeConfig.TEXT_HEAD);
+                return l;
+            }
+        });
+
         DefaultTableCellRenderer padLeft = new DefaultTableCellRenderer() {
             { setBorder(new EmptyBorder(0, 14, 0, 0));
               setBackground(ThemeConfig.BG_TABLE);
               setForeground(ThemeConfig.TEXT_BODY); }
         };
-        DefaultTableCellRenderer nameRenderer = new DefaultTableCellRenderer() {
-            { setBorder(new EmptyBorder(0, 14, 0, 0));
-              setBackground(ThemeConfig.BG_TABLE); }
+        table.getColumnModel().getColumn(2).setCellRenderer(padLeft);
+
+        table.getColumnModel().getColumn(3).setCellRenderer(new DefaultTableCellRenderer() {
             @Override public Component getTableCellRendererComponent(
                     JTable t, Object val, boolean sel, boolean foc, int r, int c) {
                 JLabel l = (JLabel) super.getTableCellRendererComponent(t, val, sel, foc, r, c);
-                l.setForeground(ThemeConfig.TEXT_HEAD);
-                l.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+                l.setHorizontalAlignment(CENTER);
+                l.setBackground(ThemeConfig.BG_TABLE);
+                l.setFont(new Font("Segoe UI", Font.BOLD, 13));
+                int total = val != null ? Integer.parseInt(val.toString()) : 0;
+                l.setForeground(total > 0 ? ThemeConfig.ACCENT : ThemeConfig.TEXT_MUTED);
+                l.setText(total > 0 ? total + "x" : "—");
                 return l;
             }
-        };
+        });
 
-        table.getColumnModel().getColumn(1).setCellRenderer(nameRenderer);
-        table.getColumnModel().getColumn(2).setCellRenderer(padLeft);
-        table.getColumnModel().getColumn(3).setCellRenderer(padLeft);
         table.getColumnModel().getColumn(0).setPreferredWidth(0);
-        table.getColumnModel().getColumn(1).setPreferredWidth(220);
-        table.getColumnModel().getColumn(2).setPreferredWidth(150);
-        table.getColumnModel().getColumn(3).setPreferredWidth(400);
+        table.getColumnModel().getColumn(1).setPreferredWidth(280);
+        table.getColumnModel().getColumn(2).setPreferredWidth(180);
+        table.getColumnModel().getColumn(3).setPreferredWidth(140);
     }
-
-    // ─────────────────────────────────────────────
-    // LOAD DATA
-    // ─────────────────────────────────────────────
+//load data
     private void loadData() {
         new SwingWorker<List<Object[]>, Void>() {
             @Override protected List<Object[]> doInBackground() throws Exception {
                 List<Object[]> rows = new ArrayList<>();
                 try (Connection conn = Koneksi.configDB();
                      ResultSet rs = conn.createStatement().executeQuery(
-                         "SELECT id_supplier, nama_supplier, " +
-                         "COALESCE(kontak,'-') AS kontak, " +
-                         "COALESCE(alamat,'-') AS alamat " +
-                         "FROM tb_supplier ORDER BY nama_supplier")) {
+                         "SELECT p.id_pelanggan, p.nama_pelanggan, " +
+                         "COALESCE(p.kontak, '-') AS kontak, " +
+                         "COUNT(pj.id_penjualan) AS total_transaksi " +
+                         "FROM tb_pelanggan p " +
+                         "LEFT JOIN tb_penjualan pj ON p.id_pelanggan = pj.id_pelanggan " +
+                         "GROUP BY p.id_pelanggan, p.nama_pelanggan, p.kontak " +
+                         "ORDER BY p.nama_pelanggan")) {
                     while (rs.next()) rows.add(new Object[]{
-                        rs.getInt("id_supplier"),
-                        rs.getString("nama_supplier"),
+                        rs.getInt("id_pelanggan"),
+                        rs.getString("nama_pelanggan"),
                         rs.getString("kontak"),
-                        rs.getString("alamat")
+                        rs.getInt("total_transaksi")
                     });
                 }
                 return rows;
@@ -216,15 +216,11 @@ public class SupplierPanel extends JPanel {
             }
         }.execute();
     }
-
-    // ─────────────────────────────────────────────
-    // FORM DIALOG
-    // ─────────────────────────────────────────────
     private void showFormDialog(boolean isEdit) {
         JDialog dialog = new JDialog(
             (Frame) SwingUtilities.getWindowAncestor(this),
-            isEdit ? "Edit Supplier" : "Tambah Supplier", true);
-        dialog.setSize(440, 340);
+            isEdit ? "Edit Pelanggan" : "Tambah Pelanggan", true);
+        dialog.setSize(400, 260);
         dialog.setLocationRelativeTo(this);
         dialog.setResizable(false);
 
@@ -235,19 +231,6 @@ public class SupplierPanel extends JPanel {
         txtNama   = formField();
         txtKontak = formField();
 
-        txtAlamat = new JTextArea(3, 20); 
-        txtAlamat.setBackground(ThemeConfig.BG_CARD);
-        txtAlamat.setForeground(ThemeConfig.TEXT_HEAD);
-        txtAlamat.setCaretColor(ThemeConfig.ACCENT);
-        txtAlamat.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        txtAlamat.setLineWrap(true);
-        txtAlamat.setWrapStyleWord(true);
-        txtAlamat.setBorder(BorderFactory.createEmptyBorder(4, 10, 4, 10));
-        
-        // Membungkus JTextArea dengan JScrollPane
-        JScrollPane scrollAlamat = new JScrollPane(txtAlamat);
-        scrollAlamat.setBorder(BorderFactory.createLineBorder(new Color(0x3D, 0x3B, 0x60), 1, true));
-
         if (isEdit) prefillForm();
 
         JPanel form = new JPanel(new GridBagLayout());
@@ -256,9 +239,8 @@ public class SupplierPanel extends JPanel {
         g.fill = GridBagConstraints.HORIZONTAL;
         g.insets = new Insets(0, 0, 12, 0);
 
-        addRow(form, g, 0, "Nama Supplier *", txtNama);
-        addRow(form, g, 1, "No. Kontak",      txtKontak);
-        addRow(form, g, 2, "Alamat",          scrollAlamat);
+        addRow(form, g, 0, "Nama Pelanggan *", txtNama);
+        addRow(form, g, 1, "No. Kontak",       txtKontak);
 
         content.add(form, BorderLayout.CENTER);
 
@@ -271,6 +253,9 @@ public class SupplierPanel extends JPanel {
         btnBatal.addActionListener(e -> dialog.dispose());
         btnSimpan.addActionListener(e -> doSave(dialog, isEdit));
 
+        txtNama.addActionListener(e -> doSave(dialog, isEdit));
+        txtKontak.addActionListener(e -> doSave(dialog, isEdit));
+
         btnRow.add(btnBatal);
         btnRow.add(btnSimpan);
         content.add(btnRow, BorderLayout.SOUTH);
@@ -279,12 +264,13 @@ public class SupplierPanel extends JPanel {
         dialog.setVisible(true);
     }
 
-    private void addRow(JPanel p, GridBagConstraints g, int row, String label, JComponent field) {
+    private void addRow(JPanel p, GridBagConstraints g, int row,
+                        String label, JComponent field) {
         g.gridx = 0; g.gridy = row; g.weightx = 0;
         JLabel l = new JLabel(label);
         l.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         l.setForeground(ThemeConfig.TEXT_BODY);
-        l.setPreferredSize(new Dimension(120, 36));
+        l.setPreferredSize(new Dimension(130, 36));
         p.add(l, g);
         g.gridx = 1; g.weightx = 1;
         p.add(field, g);
@@ -295,46 +281,39 @@ public class SupplierPanel extends JPanel {
         if (id == -1) return;
         try (Connection conn = Koneksi.configDB();
              PreparedStatement ps = conn.prepareStatement(
-                 "SELECT * FROM tb_supplier WHERE id_supplier = ?")) {
+                 "SELECT * FROM tb_pelanggan WHERE id_pelanggan = ?")) {
             ps.setInt(1, id);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                txtNama.setText(rs.getString("nama_supplier"));
+                txtNama.setText(rs.getString("nama_pelanggan"));
                 txtKontak.setText(rs.getString("kontak") != null ? rs.getString("kontak") : "");
-                txtAlamat.setText(rs.getString("alamat") != null ? rs.getString("alamat") : "");
             }
         } catch (Exception e) { e.printStackTrace(); }
     }
-
-    // ─────────────────────────────────────────────
-    // CRUD LOGIC
-    // ─────────────────────────────────────────────
+// CRUD
     private void doSave(JDialog dialog, boolean isEdit) {
         String nama = txtNama.getText().trim();
         if (nama.isEmpty()) {
             JOptionPane.showMessageDialog(dialog,
-                "Nama supplier wajib diisi.", "Validasi", JOptionPane.WARNING_MESSAGE);
+                "Nama pelanggan wajib diisi.", "Validasi", JOptionPane.WARNING_MESSAGE);
             return;
         }
-
         String kontak = txtKontak.getText().trim();
-        String alamat = txtAlamat.getText().trim();
 
         try (Connection conn = Koneksi.configDB()) {
             String sql = isEdit
-                ? "UPDATE tb_supplier SET nama_supplier=?, kontak=?, alamat=? WHERE id_supplier=?"
-                : "INSERT INTO tb_supplier (nama_supplier, kontak, alamat) VALUES (?, ?, ?)";
+                ? "UPDATE tb_pelanggan SET nama_pelanggan=?, kontak=? WHERE id_pelanggan=?"
+                : "INSERT INTO tb_pelanggan (nama_pelanggan, kontak) VALUES (?, ?)";
 
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setString(1, nama);
             ps.setString(2, kontak.isEmpty() ? null : kontak);
-            ps.setString(3, alamat.isEmpty() ? null : alamat);
-            if (isEdit) ps.setInt(4, getSelectedId());
+            if (isEdit) ps.setInt(3, getSelectedId());
             ps.executeUpdate();
 
             dialog.dispose();
             loadData();
-            showInfo(isEdit ? "Supplier berhasil diupdate!" : "Supplier berhasil ditambahkan!");
+            showInfo(isEdit ? "Pelanggan berhasil diupdate!" : "Pelanggan berhasil ditambahkan!");
 
         } catch (Exception e) {
             JOptionPane.showMessageDialog(dialog,
@@ -344,23 +323,38 @@ public class SupplierPanel extends JPanel {
 
     private void doDelete() {
         int id = getSelectedId();
-        if (id == -1) { showInfo("Pilih supplier yang ingin dihapus."); return; }
+        if (id == -1) { showInfo("Pilih pelanggan yang ingin dihapus."); return; }
 
-        int confirm = JOptionPane.showConfirmDialog(this,
-            "Yakin hapus supplier ini?",
-            "Konfirmasi Hapus", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-        if (confirm != JOptionPane.YES_OPTION) return;
+        // Cek apakah pelanggan punya riwayat transaksi
+        try (Connection conn = Koneksi.configDB();
+             PreparedStatement cek = conn.prepareStatement(
+                 "SELECT COUNT(*) FROM tb_penjualan WHERE id_pelanggan = ?")) {
+            cek.setInt(1, id);
+            ResultSet rs = cek.executeQuery();
+            if (rs.next() && rs.getInt(1) > 0) {
+                int confirm = JOptionPane.showConfirmDialog(this,
+                    "Pelanggan ini memiliki riwayat transaksi.\n" +
+                    "Data penjualan terkait akan diset ke pelanggan umum (null).\n" +
+                    "Lanjutkan hapus?",
+                    "Konfirmasi Hapus", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                if (confirm != JOptionPane.YES_OPTION) return;
+            } else {
+                int confirm = JOptionPane.showConfirmDialog(this,
+                    "Yakin hapus pelanggan ini?",
+                    "Konfirmasi Hapus", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                if (confirm != JOptionPane.YES_OPTION) return;
+            }
+        } catch (Exception e) { e.printStackTrace(); return; }
 
         try (Connection conn = Koneksi.configDB();
              PreparedStatement ps = conn.prepareStatement(
-                 "DELETE FROM tb_supplier WHERE id_supplier = ?")) {
+                 "DELETE FROM tb_pelanggan WHERE id_pelanggan = ?")) {
             ps.setInt(1, id);
             ps.executeUpdate();
             loadData();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
-                "Gagal hapus — supplier mungkin masih terhubung ke data stok masuk.\nError: "
-                + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                "Gagal: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -376,10 +370,7 @@ public class SupplierPanel extends JPanel {
         if (row == -1) return -1;
         return (int) tableModel.getValueAt(table.convertRowIndexToModel(row), 0);
     }
-
-    // ─────────────────────────────────────────────
-    // HELPERS UI
-    // ─────────────────────────────────────────────
+//helpers
     private JTextField formField() {
         JTextField f = new JTextField();
         f.setPreferredSize(new Dimension(0, 36));
@@ -392,8 +383,7 @@ public class SupplierPanel extends JPanel {
             BorderFactory.createEmptyBorder(4, 10, 4, 10)));
         return f;
     }
-
-    private ImageIcon loadScaledIcon(String filename, int size) {
+        private ImageIcon loadScaledIcon(String filename, int size) {
         try {
             java.net.URL url = getClass().getResource("/com/fragrance/resources/icons/" + filename);
             if (url == null) return null;
@@ -403,7 +393,6 @@ public class SupplierPanel extends JPanel {
             return null; 
         }
     }
-
     private JButton goldButton(String text) {
         JButton b = new JButton(text) {
             @Override protected void paintComponent(Graphics g) {
@@ -427,14 +416,13 @@ public class SupplierPanel extends JPanel {
         b.setBorder(new EmptyBorder(8, 16, 8, 16));
         return b;
     }
-
     private JButton outlineButton(String text) {
         JButton b = new JButton(text) {
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                if (getModel().isPressed()) g2.setColor(new Color(0x1E, 0x1D, 0x38)); 
-                else if (getModel().isRollover()) g2.setColor(new Color(0x3A, 0x38, 0x60)); 
+                if (getModel().isPressed()) g2.setColor(new Color(0x1E, 0x1D, 0x38)); // Navy Gelap
+                else if (getModel().isRollover()) g2.setColor(new Color(0x3A, 0x38, 0x60)); // Navy Terang
                 else g2.setColor(ThemeConfig.BG_CARD);
                 
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
@@ -452,7 +440,6 @@ public class SupplierPanel extends JPanel {
         b.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return b;
     }
-
     private JButton dangerButton(String text) {
         JButton b = new JButton(text) {
             @Override protected void paintComponent(Graphics g) {
