@@ -2,33 +2,28 @@ package com.fragrance.panel;
 
 import com.fragrance.util.Koneksi;
 import com.fragrance.util.ThemeConfig;
-
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.*;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
 
-public class DashboardPanel extends JPanel {
+public class DashboardPanelx extends JPanel {
 
     private JLabel valTotalProduk, valStokMenipis, valTerjual, valOmzet;
     private DefaultTableModel tableModel;
 
-    public DashboardPanel() {
+    public DashboardPanelx() {
         setLayout(new BorderLayout());
         setBackground(ThemeConfig.BG_PRIMARY);
         initUI();
         loadData();
     }
-
-    // ─────────────────────────────────────────────
-    // UI SETUP
-    // ─────────────────────────────────────────────
     private void initUI() {
         JPanel wrap = new JPanel();
         wrap.setLayout(new BoxLayout(wrap, BoxLayout.Y_AXIS));
@@ -44,10 +39,6 @@ public class DashboardPanel extends JPanel {
         scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         add(scroll, BorderLayout.CENTER);
     }
-
-    // ─────────────────────────────────────────────
-    // STAT CARDS
-    // ─────────────────────────────────────────────
     private JPanel buildStatRow() {
         JPanel row = new JPanel(new GridLayout(1, 4, 12, 0));
         row.setOpaque(false);
@@ -93,10 +84,6 @@ public class DashboardPanel extends JPanel {
         l.setFont(new Font("Segoe UI", Font.BOLD, 28));
         return l;
     }
-
-    // ─────────────────────────────────────────────
-    // LOW STOCK TABLE
-    // ─────────────────────────────────────────────
     private JPanel buildLowStockSection() {
         JPanel section = new JPanel(new BorderLayout());
         section.setOpaque(false);
@@ -119,7 +106,6 @@ public class DashboardPanel extends JPanel {
         sectionHeader.add(lblSub, BorderLayout.EAST);
         section.add(sectionHeader, BorderLayout.NORTH);
 
-        // Table
         String[] cols = {"Nama Produk", "Brand", "Kategori", "Kondisi", "Stok"};
         tableModel = new DefaultTableModel(cols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
@@ -144,20 +130,17 @@ public class DashboardPanel extends JPanel {
         table.setIntercellSpacing(new Dimension(0, 0));
         table.setBorder(BorderFactory.createEmptyBorder());
 
-        // Header style
         table.getTableHeader().setBackground(new Color(0x1E, 0x1D, 0x38));
         table.getTableHeader().setForeground(ThemeConfig.TEXT_MUTED);
         table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 11));
         table.getTableHeader().setPreferredSize(new Dimension(0, 36));
 
-        // Kolom default — padding kiri
         DefaultTableCellRenderer leftPad = new DefaultTableCellRenderer();
         leftPad.setBorder(new EmptyBorder(0, 12, 0, 0));
         leftPad.setBackground(ThemeConfig.BG_TABLE);
         leftPad.setForeground(ThemeConfig.TEXT_BODY);
         for (int i = 0; i < 4; i++) table.getColumnModel().getColumn(i).setCellRenderer(leftPad);
 
-        // Kolom Stok — center + warna
         table.getColumnModel().getColumn(4).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(
@@ -176,7 +159,6 @@ public class DashboardPanel extends JPanel {
             }
         });
 
-        // Lebar kolom
         table.getColumnModel().getColumn(0).setPreferredWidth(220);
         table.getColumnModel().getColumn(1).setPreferredWidth(130);
         table.getColumnModel().getColumn(2).setPreferredWidth(120);
@@ -191,10 +173,6 @@ public class DashboardPanel extends JPanel {
         sp.setBorder(BorderFactory.createLineBorder(new Color(0x2A, 0x28, 0x48), 1, true));
         return sp;
     }
-
-    // ─────────────────────────────────────────────
-    // LOAD DATA DARI DB (non-blocking)
-    // ─────────────────────────────────────────────
     private void loadData() {
         new SwingWorker<Void, Void>() {
             int    totalProduk = 0, stokMenipis = 0, terjual = 0;
@@ -204,20 +182,14 @@ public class DashboardPanel extends JPanel {
             @Override
             protected Void doInBackground() throws Exception {
                 try (Connection conn = Koneksi.configDB()) {
-
-                    // ── Total produk ──
                     try (ResultSet rs = conn.createStatement()
                             .executeQuery("SELECT COUNT(*) FROM tb_produk")) {
                         if (rs.next()) totalProduk = rs.getInt(1);
                     }
-
-                    // ── Stok menipis (≤5) ──
                     try (ResultSet rs = conn.createStatement()
                             .executeQuery("SELECT COUNT(*) FROM tb_produk WHERE stok <= 5")) {
                         if (rs.next()) stokMenipis = rs.getInt(1);
                     }
-
-                    // ── Terjual hari ini ──
                     try (ResultSet rs = conn.createStatement().executeQuery(
                             "SELECT COALESCE(SUM(dp.qty),0) " +
                             "FROM tb_detail_penjualan dp " +
@@ -225,15 +197,11 @@ public class DashboardPanel extends JPanel {
                             "WHERE DATE(p.tanggal) = CURDATE()")) {
                         if (rs.next()) terjual = rs.getInt(1);
                     }
-
-                    // ── Omzet hari ini ──
                     try (ResultSet rs = conn.createStatement().executeQuery(
                             "SELECT COALESCE(SUM(total_harga),0) " +
                             "FROM tb_penjualan WHERE DATE(tanggal) = CURDATE()")) {
                         if (rs.next()) omzet = rs.getDouble(1);
                     }
-
-                    // ── Detail stok menipis ──
                     try (ResultSet rs = conn.createStatement().executeQuery(
                             "SELECT p.nama_produk, p.brand, " +
                             "COALESCE(k.nama_kategori,'-') AS kategori, " +
