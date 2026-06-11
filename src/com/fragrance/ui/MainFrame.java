@@ -1,26 +1,28 @@
 package com.fragrance.ui;
 
-import com.fragrance.panel.DashboardPanel;
+import com.fragrance.panel.ProdukPanel;
+import com.fragrance.panel.SupplierPanel;
 import com.fragrance.util.Koneksi;
 import com.fragrance.util.SessionManager;
 import com.fragrance.util.ThemeConfig;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.sql.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
 public class MainFrame extends JFrame {
 
-    // ── Instance fields ────────────────────────────────
     private JPanel  contentPanel;
     private JLabel  lblHeaderTitle;
+    private JLabel  lblSubtitle;
     private JButton activeBtn;
 
-    // Tombol sidebar (perlu diakses di applyRBAC)
-    private JButton btnDashboard, btnKatalog, btnTransaksi,
-                    btnStokMasuk, btnMaster, btnLogUser;
+    private JButton btnProduk, btnSupplier, btnKategori, btnPelanggan,
+                    btnStokMasuk, btnPenjualan, btnGantiPassword, btnLogUser;
 
-    // ── Constructor ────────────────────────────────────
+    //Constructor 
     public MainFrame() {
         setTitle("FragrancePOS");
         setSize(1100, 680);
@@ -28,161 +30,242 @@ public class MainFrame extends JFrame {
         setLocationRelativeTo(null);
         initUI();
         applyRBAC();
-        // Buka dashboard sebagai panel awal
-        btnDashboard.doClick();
+        btnProduk.doClick(); 
     }
 
-    // ─────────────────────────────────────────────
-    // UI SETUP
-    // ─────────────────────────────────────────────
     private void initUI() {
         JPanel root = new JPanel(new BorderLayout());
         root.setBackground(ThemeConfig.BG_PRIMARY);
-        root.add(buildSidebar(),      BorderLayout.WEST);
-        root.add(buildMainContent(),  BorderLayout.CENTER);
+        root.add(buildSidebar(),     BorderLayout.WEST);
+        root.add(buildMainContent(), BorderLayout.CENTER);
         setContentPane(root);
     }
-
-    // ─────────────────────────────────────────────
     // SIDEBAR
-    // ─────────────────────────────────────────────
     private JPanel buildSidebar() {
-    JPanel sidebar = new JPanel();
-    sidebar.setPreferredSize(new Dimension(210, 0));
-    sidebar.setBackground(ThemeConfig.BG_SIDEBAR);
-    sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
-    sidebar.setBorder(new EmptyBorder(24, 8, 16, 8));
+        JPanel sidebar = new JPanel();
+        sidebar.setPreferredSize(new Dimension(210, 0));
+        sidebar.setBackground(ThemeConfig.BG_SIDEBAR);
+        sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
+        sidebar.setBorder(new EmptyBorder(24, 8, 16, 8));
 
-    // ── Profil user — tanpa simbol kotak ──
-    JPanel profilePanel = new JPanel();
-    profilePanel.setOpaque(false);
-    profilePanel.setLayout(new BoxLayout(profilePanel, BoxLayout.Y_AXIS));
-    profilePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-    profilePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
-    profilePanel.setBorder(new EmptyBorder(0, 10, 0, 0));
+        //Profil User
+        JPanel profilePanel = new JPanel();
+        profilePanel.setOpaque(false);
+        profilePanel.setLayout(new BoxLayout(profilePanel, BoxLayout.Y_AXIS));
+        profilePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        profilePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
+        profilePanel.setBorder(new EmptyBorder(0, 10, 0, 0));
 
-    JLabel lblUser = new JLabel(SessionManager.getUsername());
-    lblUser.setFont(new Font("Segoe UI", Font.BOLD, 15));
-    lblUser.setForeground(ThemeConfig.ACCENT);
+        JLabel lblUser = new JLabel(SessionManager.getUsername());
+        lblUser.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        lblUser.setForeground(ThemeConfig.ACCENT);
 
-    // Role dibungkus pill kecil
-    JLabel lblRole = new JLabel("  " + SessionManager.getRole() + "  ");
-    lblRole.setFont(new Font("Segoe UI", Font.PLAIN, 10));
-    lblRole.setForeground(ThemeConfig.TEXT_MUTED);
-    lblRole.setBorder(BorderFactory.createLineBorder(new Color(0x3D, 0x3B, 0x60), 1, true));
+        JLabel lblRole = new JLabel("  " + SessionManager.getRole() + "  ");
+        lblRole.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+        lblRole.setForeground(ThemeConfig.TEXT_MUTED);
+        lblRole.setBorder(BorderFactory.createLineBorder(new Color(0x3D, 0x3B, 0x60), 1, true));
 
-    profilePanel.add(lblUser);
-    profilePanel.add(Box.createVerticalStrut(4));
-    profilePanel.add(lblRole);
+        profilePanel.add(lblUser);
+        profilePanel.add(Box.createVerticalStrut(4));
+        profilePanel.add(lblRole);
 
-    // Divider
-    JSeparator sep = new JSeparator();
-    sep.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
-    sep.setForeground(new Color(0x2A, 0x28, 0x48));
+        JSeparator sep = new JSeparator();
+        sep.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+        sep.setForeground(new Color(0x2A, 0x28, 0x48));
 
-    sidebar.add(profilePanel);
-    sidebar.add(Box.createVerticalStrut(16));
-    sidebar.add(sep);
-    sidebar.add(Box.createVerticalStrut(10));
+        sidebar.add(profilePanel);
+        sidebar.add(Box.createVerticalStrut(16));
+        sidebar.add(sep);
+        sidebar.add(Box.createVerticalStrut(10));
 
-    // ── Section: MASTER ──
-    sidebar.add(sectionLabel("MASTER"));
-    btnDashboard = createMenuButton("📊", "Dashboard");
-    btnKatalog   = createMenuButton("🛍️", "Katalog Produk");
-    btnMaster    = createMenuButton("📁", "Master Data");
-    sidebar.add(btnDashboard);
-    sidebar.add(btnKatalog);
-    sidebar.add(btnMaster);
-    sidebar.add(Box.createVerticalStrut(4));
+        //MASTER
+        sidebar.add(sectionLabel("MASTER"));
+        btnProduk    = createMenuButton("produk",    "Produk");
+        btnSupplier  = createMenuButton("supplier",  "Supplier");
+        btnKategori  = createMenuButton("kategori",  "Kategori");
+        btnPelanggan = createMenuButton("pelanggan", "Pelanggan");
+        sidebar.add(btnProduk);
+        sidebar.add(btnSupplier);
+        sidebar.add(btnKategori);
+        sidebar.add(btnPelanggan);
+        sidebar.add(Box.createVerticalStrut(4));
 
-    // ── Section: TRANSAKSI ──
-    sidebar.add(sectionLabel("TRANSAKSI"));
-    btnTransaksi = createMenuButton("🛒", "Transaksi Kasir");
-    btnStokMasuk = createMenuButton("📦", "Stok Masuk");
-    sidebar.add(btnTransaksi);
-    sidebar.add(btnStokMasuk);
-    sidebar.add(Box.createVerticalStrut(4));
+        //TRANSAKSI
+        sidebar.add(sectionLabel("TRANSAKSI"));
+        btnStokMasuk = createMenuButton("stok",      "Stok Masuk");
+        btnPenjualan = createMenuButton("penjualan", "Penjualan");
+        sidebar.add(btnStokMasuk);
+        sidebar.add(btnPenjualan);
+        sidebar.add(Box.createVerticalStrut(4));
 
-    // ── Section: UTILITAS ──
-    sidebar.add(sectionLabel("UTILITAS"));
-    btnLogUser   = createMenuButton("🔐", "Log Aktivitas");
-    sidebar.add(btnLogUser);
+        //UTILITAS
+        sidebar.add(sectionLabel("UTILITAS"));
+        btnGantiPassword = createMenuButton("password", "Ganti Password");
+        btnLogUser       = createMenuButton("log",      "Log User");
+        sidebar.add(btnGantiPassword);
+        sidebar.add(btnLogUser);
 
-    // ActionListeners
-   btnDashboard.addActionListener(e ->
-    switchPanel(new DashboardPanel(), "Dashboard Overview", btnDashboard));
-    btnKatalog.addActionListener(e    -> switchPanel(buildPlaceholder("Katalog"),        "Katalog Produk",      btnKatalog));
-    btnMaster.addActionListener(e     -> switchPanel(buildPlaceholder("Master Data"),    "Master Data",         btnMaster));
-    btnTransaksi.addActionListener(e  -> switchPanel(buildPlaceholder("Transaksi"),      "Transaksi Kasir",     btnTransaksi));
-    btnStokMasuk.addActionListener(e  -> switchPanel(buildPlaceholder("Stok Masuk"),     "Stok Masuk",          btnStokMasuk));
-    btnLogUser.addActionListener(e    -> switchPanel(buildPlaceholder("Log Aktivitas"),  "Log Aktivitas User",  btnLogUser));
+        //ActionListeners
+        btnProduk.addActionListener(e ->
+            switchPanel(new ProdukPanel(), "Data Produk",
+                "File Master › Produk", btnProduk));
+        btnSupplier.addActionListener(e ->
+            switchPanel(new SupplierPanel(), "Data Supplier", "File Master › Supplier", btnSupplier));
+        btnKategori.addActionListener(e ->
+            switchPanel(buildPlaceholder("Kategori"), "Data Kategori",
+                "File Master › Kategori", btnKategori));
+        btnPelanggan.addActionListener(e ->
+            switchPanel(buildPlaceholder("Pelanggan"), "Data Pelanggan",
+                "File Master › Pelanggan", btnPelanggan));
+        btnStokMasuk.addActionListener(e ->
+            switchPanel(buildPlaceholder("Stok Masuk"), "Stok Masuk",
+                "Transaksi › Stok Masuk", btnStokMasuk));
+        btnPenjualan.addActionListener(e ->
+            switchPanel(buildPlaceholder("Penjualan"), "Penjualan",
+                "Transaksi › Penjualan", btnPenjualan));
+        btnGantiPassword.addActionListener(e ->
+            switchPanel(buildPlaceholder("Ganti Password"), "Ganti Password",
+                "Utilitas › Ganti Password", btnGantiPassword));
+        btnLogUser.addActionListener(e ->
+            switchPanel(buildPlaceholder("Log User"), "Log Aktivitas",
+                "Utilitas › Log User", btnLogUser));
 
-    sidebar.add(Box.createVerticalGlue());
+        sidebar.add(Box.createVerticalGlue());
 
-    // ── Keluar ──
-    JSeparator sepBottom = new JSeparator();
-    sepBottom.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
-    sepBottom.setForeground(new Color(0x2A, 0x28, 0x48));
-    sidebar.add(sepBottom);
-    sidebar.add(Box.createVerticalStrut(10));
+        //Logout
+        JSeparator sepBottom = new JSeparator();
+        sepBottom.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+        sepBottom.setForeground(new Color(0x2A, 0x28, 0x48));
+        sidebar.add(sepBottom);
+        sidebar.add(Box.createVerticalStrut(10));
 
-    JButton btnLogout = createMenuButton("🚪", "Keluar");
-    btnLogout.setForeground(ThemeConfig.DANGER);
-    btnLogout.addActionListener(e -> doLogout());
-    sidebar.add(btnLogout);
+        JButton btnLogout = createMenuButton("logout", "Keluar");
+        btnLogout.setForeground(ThemeConfig.DANGER);
+        btnLogout.addMouseListener(new MouseAdapter() {
+            @Override public void mouseEntered(MouseEvent e) {
+                btnLogout.setForeground(ThemeConfig.DANGER);
+            }
+            @Override public void mouseExited(MouseEvent e) {
+                btnLogout.setForeground(ThemeConfig.DANGER);
+            }
+        });
+        btnLogout.addActionListener(e -> doLogout());
+        sidebar.add(btnLogout);
 
-    return sidebar;
-}
+        return sidebar;
+    }
+    // HELPERS SIDEBAR
+    private JLabel sectionLabel(String text) {
+        JLabel l = new JLabel(text);
+        l.setFont(new Font("Segoe UI", Font.BOLD, 10));
+        l.setForeground(new Color(0x3A, 0x38, 0x60));
+        l.setBorder(new EmptyBorder(10, 14, 4, 0));
+        l.setAlignmentX(Component.LEFT_ALIGNMENT);
+        l.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+        return l;
+    }
 
-// Helper — label section kecil
-private JLabel sectionLabel(String text) {
-    JLabel l = new JLabel(text);
-    l.setFont(new Font("Segoe UI", Font.BOLD, 10));
-    l.setForeground(new Color(0x3A, 0x38, 0x60));
-    l.setBorder(new EmptyBorder(10, 14, 4, 0));
-    l.setAlignmentX(Component.LEFT_ALIGNMENT);
-    l.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
-    return l;
-}
+    private ImageIcon loadScaledIcon(String filename, int size) {
+        try {
+            java.net.URL url = getClass().getResource("/com/fragrance/resources/icons/" + filename);
+            if (url == null) return null;
+            Image img = new ImageIcon(url).getImage()
+                            .getScaledInstance(size, size, Image.SCALE_SMOOTH);
+            return new ImageIcon(img);
+        } catch (Exception e) { return null; }
+    }
 
-    // Ganti parameter dari (iconFile, text) kembali ke (icon, text)
-private JButton createMenuButton(String icon, String text) {
-    JButton btn = new JButton("  " + icon + "  " + text);
-    btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
-    btn.setBackground(ThemeConfig.BG_SIDEBAR);
-    btn.setForeground(ThemeConfig.TEXT_BODY);
-    btn.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 13)); 
-    btn.setHorizontalAlignment(SwingConstants.LEFT);
-    btn.setFocusPainted(false);
-    btn.setBorderPainted(false);
-    btn.setOpaque(true);
-    btn.setBorder(BorderFactory.createEmptyBorder(0, 6, 0, 0));
-    btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-    btn.setAlignmentX(Component.LEFT_ALIGNMENT);
-    return btn;
-}
+    private JButton createMenuButton(String iconName, String text) {
+        ImageIcon icWhite = loadScaledIcon(iconName + "_w.png", 16);
+        ImageIcon icGold  = loadScaledIcon(iconName + "_g.png", 16);
 
-    // ─────────────────────────────────────────────
+        JButton btn = new JButton("  " + text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                if (this == activeBtn) {
+                    g2.setColor(ThemeConfig.BG_CARD); 
+                    // Menggambar background kapsul proporsional (margin atas/bawah 2px agar tidak menempel)
+                    g2.fillRoundRect(0, 2, getWidth(), getHeight() - 4, 16, 16); 
+                } else if (getModel().isRollover()) {
+                    g2.setColor(new Color(255, 255, 255, 15)); 
+                    g2.fillRoundRect(0, 2, getWidth(), getHeight() - 4, 16, 16);
+                }
+                g2.dispose();
+                super.paintComponent(g); 
+            }
+        };
+
+        if (icWhite != null) { btn.setIcon(icWhite); btn.setIconTextGap(8); }
+        btn.setPreferredSize(new Dimension(190, 42));
+        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+        btn.setMinimumSize(new Dimension(0, 42));
+        
+        btn.setForeground(ThemeConfig.TEXT_BODY);
+        btn.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        btn.setHorizontalAlignment(SwingConstants.LEFT);
+        
+        btn.setContentAreaFilled(false); 
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
+        btn.setOpaque(false);
+
+        btn.setBorder(BorderFactory.createEmptyBorder(10, 14, 10, 0)); 
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        btn.putClientProperty("icW", icWhite);
+        btn.putClientProperty("icG", icGold);
+
+        btn.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override public void mouseEntered(java.awt.event.MouseEvent e) {
+                if (btn != activeBtn) {
+                    btn.setForeground(ThemeConfig.ACCENT);
+                    if (icGold != null) btn.setIcon(icGold);
+                }
+            }
+            @Override public void mouseExited(java.awt.event.MouseEvent e) {
+                if (btn != activeBtn) {
+                    btn.setForeground(ThemeConfig.TEXT_BODY);
+                    if (icWhite != null) btn.setIcon(icWhite);
+                }
+            }
+        });
+
+        return btn;
+    }
     // MAIN CONTENT
-    // ─────────────────────────────────────────────
     private JPanel buildMainContent() {
         JPanel wrapper = new JPanel(new BorderLayout());
         wrapper.setBackground(ThemeConfig.BG_PRIMARY);
         wrapper.setBorder(new EmptyBorder(20, 24, 20, 24));
 
-        // Header bar atas
         JPanel headerBar = new JPanel(new BorderLayout());
         headerBar.setOpaque(false);
         headerBar.setBorder(new EmptyBorder(0, 0, 18, 0));
 
-        lblHeaderTitle = new JLabel("Dashboard");
+        JPanel titleStack = new JPanel();
+        titleStack.setOpaque(false);
+        titleStack.setLayout(new BoxLayout(titleStack, BoxLayout.Y_AXIS));
+
+        lblHeaderTitle = new JLabel("Data Produk");
         lblHeaderTitle.setFont(new Font("Segoe UI", Font.BOLD, 22));
         lblHeaderTitle.setForeground(ThemeConfig.TEXT_HEAD);
-        headerBar.add(lblHeaderTitle, BorderLayout.WEST);
 
+        lblSubtitle = new JLabel("File Master › Produk");
+        lblSubtitle.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        lblSubtitle.setForeground(ThemeConfig.TEXT_MUTED);
+
+        titleStack.add(lblHeaderTitle);
+        titleStack.add(Box.createVerticalStrut(2));
+        titleStack.add(lblSubtitle);
+
+        headerBar.add(titleStack, BorderLayout.WEST);
         wrapper.add(headerBar, BorderLayout.NORTH);
 
-        // Area konten — diganti-ganti via switchPanel()
+        // Area konten
         contentPanel = new JPanel(new BorderLayout());
         contentPanel.setBackground(ThemeConfig.BG_PRIMARY);
         wrapper.add(contentPanel, BorderLayout.CENTER);
@@ -190,27 +273,29 @@ private JButton createMenuButton(String icon, String text) {
         return wrapper;
     }
 
-    // ─────────────────────────────────────────────
     // PANEL SWITCHING
-    // ─────────────────────────────────────────────
-    private void switchPanel(JPanel panel, String title, JButton sourceBtn) {
-    lblHeaderTitle.setText(title);
+    private void switchPanel(JPanel panel, String title, String subtitle, JButton sourceBtn) {
+        lblHeaderTitle.setText(title);
+        lblSubtitle.setText(subtitle);
+        if (activeBtn != null) {
+            activeBtn.setForeground(ThemeConfig.TEXT_BODY);
+            ImageIcon icW = (ImageIcon) activeBtn.getClientProperty("icW");
+            if (icW != null) activeBtn.setIcon(icW);
+        }
 
-    if (activeBtn != null) {
-        activeBtn.setBackground(ThemeConfig.BG_SIDEBAR); 
-        activeBtn.setForeground(ThemeConfig.TEXT_BODY);  
+        activeBtn = sourceBtn;
+        sourceBtn.setForeground(ThemeConfig.ACCENT); 
+        ImageIcon icG = (ImageIcon) sourceBtn.getClientProperty("icG");
+        if (icG != null) sourceBtn.setIcon(icG);
+        if (sourceBtn.getParent() != null) {
+            sourceBtn.getParent().repaint();
+        }
+        contentPanel.removeAll();
+        contentPanel.add(panel, BorderLayout.CENTER);
+        contentPanel.revalidate();
+        contentPanel.repaint();
     }
-    sourceBtn.setBackground(ThemeConfig.ACCENT);
-    sourceBtn.setForeground(ThemeConfig.ACCENT_TEXT);
-    activeBtn = sourceBtn;
 
-    contentPanel.removeAll();
-    contentPanel.add(panel, BorderLayout.CENTER);
-    contentPanel.revalidate();
-    contentPanel.repaint();
-}
-
-    // Placeholder sementara — nanti diganti ProdukPanel, dll.
     private JPanel buildPlaceholder(String name) {
         JPanel p = new JPanel(new GridBagLayout());
         p.setBackground(ThemeConfig.BG_PRIMARY);
@@ -220,25 +305,25 @@ private JButton createMenuButton(String icon, String text) {
         p.add(lbl);
         return p;
     }
-
-    // RBAC — FIX: 
+    // RBAC
     private void applyRBAC() {
-    String role = SessionManager.getRole();
-
-    if (role.equals("Operator")) {
-        btnMaster.setVisible(false);
-        btnLogUser.setVisible(false);
-    } else if (role.equals("User")) {
-        btnTransaksi.setVisible(false);
-        btnStokMasuk.setVisible(false);
-        btnMaster.setVisible(false);
-        btnLogUser.setVisible(false);
+        String role = SessionManager.getRole();
+        if (role.equals("Operator")) {
+            btnSupplier.setVisible(false);
+            btnKategori.setVisible(false);
+            btnPelanggan.setVisible(false);
+            btnLogUser.setVisible(false);
+        } else if (role.equals("User")) {
+            btnSupplier.setVisible(false);
+            btnKategori.setVisible(false);
+            btnPelanggan.setVisible(false);
+            btnStokMasuk.setVisible(false);
+            btnPenjualan.setVisible(false);
+            btnGantiPassword.setVisible(false);
+            btnLogUser.setVisible(false);
+        }
     }
-    }
-
-    // ─────────────────────────────────────────────
     // LOGOUT + LOG KE DB
-    // ─────────────────────────────────────────────
     private void doLogout() {
         int confirm = JOptionPane.showConfirmDialog(
             this,
@@ -249,7 +334,6 @@ private JButton createMenuButton(String icon, String text) {
         );
         if (confirm != JOptionPane.YES_OPTION) return;
 
-        // Catat waktu logout ke DB
         try (Connection conn = Koneksi.configDB();
              PreparedStatement ps = conn.prepareStatement(
                 "UPDATE tb_log_user SET waktu_logout = NOW() " +
@@ -257,7 +341,7 @@ private JButton createMenuButton(String icon, String text) {
             ps.setInt(1, SessionManager.getUserId());
             ps.executeUpdate();
         } catch (Exception ex) {
-            ex.printStackTrace(); // Tetap lanjut logout walau log gagal
+            ex.printStackTrace();
         }
 
         SessionManager.clearSession();
