@@ -282,21 +282,22 @@ public class MainFrame extends JFrame {
     }
 
     // PANEL SWITCHING
-    private void switchPanel(JPanel panel, String title, String subtitle, JButton sourceBtn) {
+    public void switchPanel(JPanel panel, String title, String subtitle, JButton sourceBtn) {
         lblHeaderTitle.setText(title);
         lblSubtitle.setText(subtitle);
+        
         if (activeBtn != null) {
             activeBtn.setForeground(ThemeConfig.TEXT_BODY);
             ImageIcon icW = (ImageIcon) activeBtn.getClientProperty("icW");
             if (icW != null) activeBtn.setIcon(icW);
         }
-
-        activeBtn = sourceBtn;
-        sourceBtn.setForeground(ThemeConfig.ACCENT); 
-        ImageIcon icG = (ImageIcon) sourceBtn.getClientProperty("icG");
-        if (icG != null) sourceBtn.setIcon(icG);
-        if (sourceBtn.getParent() != null) {
-            sourceBtn.getParent().repaint();
+        if (sourceBtn != null) {
+            sourceBtn.setForeground(ThemeConfig.ACCENT); 
+            ImageIcon icG = (ImageIcon) sourceBtn.getClientProperty("icG");
+            if (icG != null) sourceBtn.setIcon(icG);
+            if (sourceBtn.getParent() != null) {
+                sourceBtn.getParent().repaint();
+            }
         }
         contentPanel.removeAll();
         contentPanel.add(panel, BorderLayout.CENTER);
