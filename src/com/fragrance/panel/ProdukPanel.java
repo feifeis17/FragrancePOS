@@ -1,18 +1,18 @@
 package com.fragrance.panel;
 
+import com.fragrance.ui.MainFrame;
 import com.fragrance.util.Koneksi;
 import com.fragrance.util.RoundedPanel;
 import com.fragrance.util.SessionManager;
 import com.fragrance.util.ThemeConfig;
-
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import javax.swing.table.*;
 import java.awt.*;
 import java.sql.*;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.List;
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.table.*;
 
 public class ProdukPanel extends JPanel {
 
@@ -534,21 +534,26 @@ public class ProdukPanel extends JPanel {
         valMenipis = statLbl();
         valTerjual = statLbl();
         valOmzet   = statLbl();
-
-        // Aksi Navigasi (contoh: Stok Menipis ke Stok Masuk)
-        row.add(miniCard("Total Produk", valTotal, ThemeConfig.TEXT_HEAD, null));
-        row.add(miniCard("Stok Menipis", valMenipis, ThemeConfig.DANGER, () -> {
-            // MainFrame main = (MainFrame) SwingUtilities.getWindowAncestor(this);
-            // main.switchPanel(...); // tambahkan navigasi disini jika diperlukan
+        row.add(miniCard("Total Produk", valTotal, ThemeConfig.TEXT_HEAD, () -> {
+            txtSearch.setText(""); 
+            filterTable();         
+            loadData();            
         }));
-        row.add(miniCard("Terjual Hari Ini", valTerjual, ThemeConfig.ACCENT, null));
-        row.add(miniCard("Omzet", valOmzet, new Color(0x81,0xC9,0x95), null));
+        row.add(miniCard("Stok Menipis", valMenipis, ThemeConfig.DANGER, () -> {
+            MainFrame main = (MainFrame) SwingUtilities.getWindowAncestor(this);
+            main.switchPanel(new StokMasukPanel(), "Stok Masuk", "Transaksi › Stok Masuk", null);
+        }));
+        row.add(miniCard("Terjual Hari Ini", valTerjual, ThemeConfig.ACCENT, () -> {
+            MainFrame main = (MainFrame) SwingUtilities.getWindowAncestor(this);
+            main.switchPanel(new LaporanPanel(), "Laporan Analitik", "Transaksi › Laporan Bisnis", null);
+        }));
+        row.add(miniCard("Omzet", valOmzet, new Color(0x81,0xC9,0x95), () -> {
+            MainFrame main = (MainFrame) SwingUtilities.getWindowAncestor(this);
+            main.switchPanel(new LaporanPanel(), "Laporan Analitik", "Transaksi › Laporan Bisnis", null);
+        }));
         return row;
     }
-
-    // ─────────────────────────────────────────────
     // HELPERS & COMPONENT FACTORIES
-    // ─────────────────────────────────────────────
     private JLabel statLbl() {
         JLabel l = new JLabel("—");
         l.setFont(new Font("Segoe UI", Font.BOLD, 26));
