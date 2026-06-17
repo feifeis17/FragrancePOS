@@ -18,17 +18,13 @@ public class LoginFrame extends JFrame {
     private JCheckBox     chkShowPass;
 
     public LoginFrame() {
-        setTitle("FragrancePOS — Login");
+        setTitle("Decium Perfumery — Login"); 
         setSize(820, 500);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);
         initUI();
     }
-
-    // ─────────────────────────────────────────────
-    // UI SETUP
-    // ─────────────────────────────────────────────
     private void initUI() {
         JPanel root = new JPanel(new GridLayout(1, 2));
         root.setBackground(ThemeConfig.BG_PRIMARY);
@@ -41,15 +37,30 @@ public class LoginFrame extends JFrame {
 
     private JPanel buildLeftPanel() {
         JPanel left = new JPanel();
-        left.setBackground(ThemeConfig.BG_SIDEBAR);
+        
+        left.setBackground(ThemeConfig.BG_SIDEBAR); 
+        
         left.setLayout(new BoxLayout(left, BoxLayout.Y_AXIS));
         left.setBorder(BorderFactory.createEmptyBorder(60, 40, 40, 40));
 
-        JLabel lblIcon = new JLabel("🌸");
-        lblIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 56));
+        JLabel lblIcon = new JLabel();
         lblIcon.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        try {
+            java.io.File fileLogo = new java.io.File("src/com/fragrance/resources/icons/logo_decium.png");
+            
+            Image img = javax.imageio.ImageIO.read(fileLogo).getScaledInstance(180, 180, Image.SCALE_SMOOTH);
+            lblIcon.setIcon(new ImageIcon(img));
+            
+        } catch (Exception e) {
+            System.out.println("Gagal memuat logo: " + e.getMessage());
+            
+            lblIcon.setText("DECIUM");
+            lblIcon.setFont(new Font("Segoe UI", Font.BOLD, 24));
+            lblIcon.setForeground(ThemeConfig.ACCENT);
+        }
 
-        JLabel lblApp = new JLabel("FragrancePOS");
+        JLabel lblApp = new JLabel("DECIUM PERFUMERY");
         lblApp.setFont(new Font("Segoe UI", Font.BOLD, 22));
         lblApp.setForeground(ThemeConfig.ACCENT);
         lblApp.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -59,9 +70,7 @@ public class LoginFrame extends JFrame {
         sep.setForeground(ThemeConfig.ACCENT);
         sep.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JLabel lblTagline = new JLabel(
-            "<html><center>Sistem Manajemen Stok<br>& Penjualan Parfum</center></html>"
-        );
+        JLabel lblTagline = new JLabel("LUXURY FRAGRANCE POS"); 
         lblTagline.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         lblTagline.setForeground(ThemeConfig.TEXT_MUTED);
         lblTagline.setHorizontalAlignment(SwingConstants.CENTER);
@@ -162,10 +171,6 @@ public class LoginFrame extends JFrame {
         right.add(form);
         return right;
     }
-
-    // ─────────────────────────────────────────────
-    // LOGIC LOGIN
-    // ─────────────────────────────────────────────
     private void doLogin() {
         String username = txtUsername.getText().trim();
         String password = new String(txtPassword.getPassword());
@@ -186,15 +191,12 @@ public class LoginFrame extends JFrame {
 
             @Override
             protected String[] doInBackground() throws Exception {
-                // SINKRONISASI 1: Sesuaikan dengan method di SecurityHelper
                 String hashed = SecurityHelper.hashPassword(password);
-
                 String sql = "SELECT u.id_user, u.username, r.nama_role " +
                              "FROM tb_user u " +
                              "JOIN tb_role r ON u.id_role = r.id_role " +
                              "WHERE u.username = ? AND u.password = ?";
 
-                // SINKRONISASI 2: Sesuaikan dengan method di Koneksi
                 try (Connection conn = Koneksi.configDB();
                      PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -207,7 +209,6 @@ public class LoginFrame extends JFrame {
                         foundUser = rs.getString("username");
                         foundRole = rs.getString("nama_role");
 
-                        // Catat waktu login ke tb_log_user
                         String logSql = "INSERT INTO tb_log_user (id_user, waktu_login) VALUES (?, NOW())";
                         try (PreparedStatement lps = conn.prepareStatement(logSql)) {
                             lps.setInt(1, foundId);
@@ -224,7 +225,7 @@ public class LoginFrame extends JFrame {
                 btnLogin.setText("Masuk");
 
                 try {
-                    get(); 
+                    get();
                 } catch (Exception ex) {
                     setStatus("Gagal koneksi database: " + ex.getMessage(), false);
                     return;
@@ -237,21 +238,15 @@ public class LoginFrame extends JFrame {
                 } else {
                     SessionManager.setSession(foundId, foundUser, foundRole);
                     SwingUtilities.invokeLater(() -> {
-                        
-                        JOptionPane.showMessageDialog(null, "Berhasil Login!\nRole Anda: " + foundRole, "Akses Diterima", JOptionPane.INFORMATION_MESSAGE);
                         new MainFrame().setVisible(true); 
                         dispose();
                     });
                 }
             }
         };
-
         worker.execute();
     }
 
-    // ─────────────────────────────────────────────
-    // HELPERS
-    // ─────────────────────────────────────────────
     private void setStatus(String msg, boolean isSuccess) {
         lblStatus.setForeground(isSuccess ? ThemeConfig.SUCCESS : ThemeConfig.DANGER);
         lblStatus.setText(msg);

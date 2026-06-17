@@ -31,17 +31,12 @@ public class ProdukPanel extends JPanel {
         loadData();
         loadStats();
     }
-
-    // ─────────────────────────────────────────────
-    // UI UTAMA
-    // ─────────────────────────────────────────────
     private void initUI() {
         JPanel wrapTop = new JPanel(new BorderLayout(0, 12));
         wrapTop.setBackground(ThemeConfig.BG_PRIMARY);
         wrapTop.add(buildMiniStats(), BorderLayout.NORTH);
         wrapTop.add(buildTopBar(),    BorderLayout.CENTER);
-        
-        // Membungkus tabel dengan RoundedPanel
+
         RoundedPanel roundedTableArea = new RoundedPanel(12, ThemeConfig.BG_TABLE, new Color(0x2A, 0x28, 0x48));
         roundedTableArea.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2)); 
         roundedTableArea.add(buildTableArea(), BorderLayout.CENTER);
@@ -101,7 +96,7 @@ public class ProdukPanel extends JPanel {
             right.add(btnHapus);
         }
 
-        // Tombol Refresh Pakai PNG & Hover Halus
+        // Tombol Refres
         JButton btnRefresh = outlineButton(""); 
         btnRefresh.setPreferredSize(new Dimension(36, 36)); 
         btnRefresh.setBorder(BorderFactory.createCompoundBorder(
@@ -148,7 +143,7 @@ public class ProdukPanel extends JPanel {
         JScrollPane sp = new JScrollPane(table);
         sp.setBackground(ThemeConfig.BG_TABLE);
         sp.getViewport().setBackground(ThemeConfig.BG_TABLE);
-        sp.setBorder(BorderFactory.createEmptyBorder()); // Hilangkan border kaku karena panel luarnya sudah rounded
+        sp.setBorder(BorderFactory.createEmptyBorder()); 
         return sp;
     }
 
@@ -247,10 +242,6 @@ public class ProdukPanel extends JPanel {
         for (int i = 0; i < widths.length; i++)
             table.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
     }
-
-    // ─────────────────────────────────────────────
-    // DATA & LOGIKA
-    // ─────────────────────────────────────────────
     private void loadData() {
         new SwingWorker<List<Object[]>, Void>() {
             @Override protected List<Object[]> doInBackground() throws Exception {
@@ -521,9 +512,6 @@ public class ProdukPanel extends JPanel {
         return (int) tableModel.getValueAt(table.convertRowIndexToModel(row), 0);
     }
 
-    // ─────────────────────────────────────────────
-    // COMPONENT BUILDERS (LAYOUT)
-    // ─────────────────────────────────────────────
     private JPanel buildMiniStats() {
         JPanel row = new JPanel(new GridLayout(1, 4, 16, 0));
         row.setOpaque(false);
@@ -553,7 +541,6 @@ public class ProdukPanel extends JPanel {
         }));
         return row;
     }
-    // HELPERS & COMPONENT FACTORIES
     private JLabel statLbl() {
         JLabel l = new JLabel("—");
         l.setFont(new Font("Segoe UI", Font.BOLD, 26));
