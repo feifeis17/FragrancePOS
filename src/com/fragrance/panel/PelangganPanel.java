@@ -325,7 +325,6 @@ public class PelangganPanel extends JPanel {
         int id = getSelectedId();
         if (id == -1) { showInfo("Pilih pelanggan yang ingin dihapus."); return; }
 
-        // Cek apakah pelanggan punya riwayat transaksi
         try (Connection conn = Koneksi.configDB();
              PreparedStatement cek = conn.prepareStatement(
                  "SELECT COUNT(*) FROM tb_penjualan WHERE id_pelanggan = ?")) {

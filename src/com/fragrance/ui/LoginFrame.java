@@ -18,7 +18,7 @@ public class LoginFrame extends JFrame {
     private JCheckBox     chkShowPass;
 
     public LoginFrame() {
-        setTitle("Decium Perfumery — Login"); 
+        setTitle("FragrenPOS — Point of Sale System for Decium Perfume Boutique"); 
         setSize(820, 500);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -76,7 +76,7 @@ public class LoginFrame extends JFrame {
         lblTagline.setHorizontalAlignment(SwingConstants.CENTER);
         lblTagline.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JLabel lblVer = new JLabel("v1.0 · Teknik Informatika UTB");
+        JLabel lblVer = new JLabel("v1.0 ·Feisal R· Teknik Informatika UTB");
         lblVer.setFont(new Font("Segoe UI", Font.PLAIN, 10));
         lblVer.setForeground(new Color(0x3A, 0x38, 0x60));
         lblVer.setAlignmentX(Component.CENTER_ALIGNMENT);

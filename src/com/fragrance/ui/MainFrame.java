@@ -1,14 +1,16 @@
 package com.fragrance.ui;
 
-import com.fragrance.panel.GantiPasswordPanel;
+import com.fragrance.panel.CetakBarcodePanel;
 import com.fragrance.panel.KategoriPanel;
 import com.fragrance.panel.LaporanPanel;
 import com.fragrance.panel.LogUserPanel;
 import com.fragrance.panel.PelangganPanel;
 import com.fragrance.panel.PenjualanPanel;
 import com.fragrance.panel.ProdukPanel;
+import com.fragrance.panel.RiwayatPenjualanPanel;
 import com.fragrance.panel.StokMasukPanel;
 import com.fragrance.panel.SupplierPanel;
+import com.fragrance.panel.UserPanel;
 import com.fragrance.util.Koneksi;
 import com.fragrance.util.SessionManager;
 import com.fragrance.util.ThemeConfig;
@@ -26,7 +28,7 @@ public class MainFrame extends JFrame {
     private JButton activeBtn;
 
     private JButton btnProduk, btnSupplier, btnKategori, btnPelanggan,
-                    btnStokMasuk, btnPenjualan, btnGantiPassword, btnLogUser, btnLaporan;
+                    btnStokMasuk, btnPenjualan,btnKasir, btnUserMenu, btnLogUser, btnLaporan, btnCetakBarcode;
 
     private Timer idleTimer;
     private JPanel screensaverPanel;
@@ -65,8 +67,7 @@ public class MainFrame extends JFrame {
             lblFallback.setFont(new Font("Segoe UI", Font.BOLD, 40));
             screensaverPanel.add(lblFallback, BorderLayout.CENTER);
         }
-        
-        //screensaver sebagai "GlassPane"
+//fitur screensaver
         setGlassPane(screensaverPanel);
         int waktuIdle = 30000; 
         idleTimer = new Timer(waktuIdle, e -> jalankanScreensaver());
@@ -106,8 +107,7 @@ public class MainFrame extends JFrame {
         sidebar.setBackground(ThemeConfig.BG_SIDEBAR);
         sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
         sidebar.setBorder(new EmptyBorder(24, 8, 16, 8));
-
-        // Profil User
+// Profil User
         JPanel profilePanel = new JPanel();
         profilePanel.setOpaque(false);
         profilePanel.setLayout(new BoxLayout(profilePanel, BoxLayout.Y_AXIS));
@@ -136,50 +136,50 @@ public class MainFrame extends JFrame {
         sidebar.add(Box.createVerticalStrut(16));
         sidebar.add(sep);
         sidebar.add(Box.createVerticalStrut(10));
-
-        // MASTER
+// MASTER
         sidebar.add(sectionLabel("MASTER"));
         btnProduk    = createMenuButton("produk",    "Produk");
         btnSupplier  = createMenuButton("supplier",  "Supplier");
+        btnLaporan   = createMenuButton("report",    "Laporan Bisnis");
         btnKategori  = createMenuButton("kategori",  "Kategori");
-        btnPelanggan = createMenuButton("pelanggan", "Pelanggan");
         sidebar.add(btnProduk);
         sidebar.add(btnSupplier);
+        sidebar.add(btnLaporan);
         sidebar.add(btnKategori);
-        sidebar.add(btnPelanggan);
         sidebar.add(Box.createVerticalStrut(4));
-
-        // TRANSAKSI
+// TRANSAKSI
         sidebar.add(sectionLabel("TRANSAKSI"));
+        btnKasir     = createMenuButton("kasir",     "Kasir");
         btnStokMasuk = createMenuButton("stok",      "Stok Masuk");
         btnPenjualan = createMenuButton("penjualan", "Penjualan");
-        btnLaporan   = createMenuButton("report",    "Laporan Bisnis");
+        btnPelanggan = createMenuButton("pelanggan", "Pelanggan");
+        sidebar.add(btnKasir);
         sidebar.add(btnStokMasuk);
         sidebar.add(btnPenjualan);
-        sidebar.add(btnLaporan);
+        sidebar.add(btnPelanggan);
         sidebar.add(Box.createVerticalStrut(4));
-
-        // UTILITAS
+// UTILITAS
         sidebar.add(sectionLabel("UTILITAS"));
-        btnGantiPassword = createMenuButton("password", "Ganti Password");
+        btnCetakBarcode  = createMenuButton("barcode",  "Cetak Barcode");
+        btnUserMenu      = createMenuButton("user",     "Manajemen User");
         btnLogUser       = createMenuButton("log",      "Log User");
-        sidebar.add(btnGantiPassword);
+        sidebar.add(btnCetakBarcode);
+        sidebar.add(btnUserMenu);
         sidebar.add(btnLogUser);
-
-        // ActionListeners
+// ActionListeners
         btnProduk.addActionListener(e -> switchPanel(new ProdukPanel(), "Data Produk", "File Master › Produk", btnProduk));
         btnSupplier.addActionListener(e -> switchPanel(new SupplierPanel(), "Data Supplier", "File Master › Supplier", btnSupplier));
         btnKategori.addActionListener(e -> switchPanel(new KategoriPanel(), "Data Kategori", "File Master › Kategori", btnKategori));
         btnPelanggan.addActionListener(e -> switchPanel(new PelangganPanel(), "Data Pelanggan", "File Master › Pelanggan", btnPelanggan));
         btnStokMasuk.addActionListener(e -> switchPanel(new StokMasukPanel(), "Stok Masuk", "Transaksi › Stok Masuk", btnStokMasuk));
-        btnPenjualan.addActionListener(e -> switchPanel(new PenjualanPanel(), "Transaksi Kasir", "Transaksi › Penjualan", btnPenjualan));
-        btnGantiPassword.addActionListener(e -> switchPanel(new GantiPasswordPanel(), "Ganti Password", "Utilitas › Ganti Password", btnGantiPassword));
+        btnKasir.addActionListener(e -> switchPanel(new PenjualanPanel(), "Transaksi Kasir", "Transaksi › Kasir", btnKasir));
+        btnPenjualan.addActionListener(e -> switchPanel(new RiwayatPenjualanPanel(), "Riwayat Data Penjualan", "Transaksi › Data Penjualan", btnPenjualan));
+        btnUserMenu.addActionListener(e -> switchPanel(new UserPanel(), "Manajemen User", "Utilitas › Manajemen User", btnUserMenu));
         btnLogUser.addActionListener(e -> switchPanel(new LogUserPanel(), "Log Aktivitas User", "Utilitas › Log User", btnLogUser));
         btnLaporan.addActionListener(e -> switchPanel(new LaporanPanel(), "Laporan Analitik", "Transaksi › Laporan Bisnis", btnLaporan));
-
+        btnCetakBarcode.addActionListener(e -> switchPanel(new CetakBarcodePanel(), "Cetak Barcode Produk", "Utilitas › Cetak Barcode", btnCetakBarcode));
         sidebar.add(Box.createVerticalGlue());
-
-        // Logout
+// Logout
         JSeparator sepBottom = new JSeparator();
         sepBottom.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
         sepBottom.setForeground(new Color(0x2A, 0x28, 0x48));
@@ -197,8 +197,7 @@ public class MainFrame extends JFrame {
 
         return sidebar;
     }
-
-    // MAIN CONTENT
+// MAIN CONTENT
     private JPanel buildMainContent() {
         JPanel wrapper = new JPanel(new BorderLayout());
         wrapper.setBackground(ThemeConfig.BG_PRIMARY);
@@ -223,8 +222,7 @@ public class MainFrame extends JFrame {
         titleStack.add(lblHeaderTitle);
         titleStack.add(Box.createVerticalStrut(2));
         titleStack.add(lblSubtitle);
-
-        //Logo Decium ke ujung kanan atas
+//Logo di pojok kanan
         JLabel lblLogoAtas = new JLabel();
         java.net.URL logoUrl = getClass().getResource("/com/fragrance/resources/icons/logo_decium.png");
         if(logoUrl != null) {
@@ -237,15 +235,14 @@ public class MainFrame extends JFrame {
         
         wrapper.add(headerBar, BorderLayout.NORTH);
         
-        // Area konten panel
+// Area konten panel
         contentPanel = new JPanel(new BorderLayout());
         contentPanel.setBackground(ThemeConfig.BG_PRIMARY);
         wrapper.add(contentPanel, BorderLayout.CENTER);
 
         return wrapper;
     }
-
-    // PANEL SWITCHING
+// PANEL SWITCHING
     public void switchPanel(JPanel panel, String title, String subtitle, JButton sourceBtn) {
         lblHeaderTitle.setText(title);
         lblSubtitle.setText(subtitle);
@@ -271,7 +268,7 @@ public class MainFrame extends JFrame {
         contentPanel.repaint();
     }
 
-    // HELPERS SIDEBAR
+// HELPERS SIDEBAR
     private JLabel sectionLabel(String text) {
         JLabel l = new JLabel(text);
         l.setFont(new Font("Segoe UI", Font.BOLD, 10));
@@ -348,8 +345,7 @@ public class MainFrame extends JFrame {
         });
         return btn;
     }
-
-    // RBAC
+// RBAC
     private void applyRBAC() {
         String role = SessionManager.getRole();
         if (role.equals("Operator")) {
@@ -362,14 +358,15 @@ public class MainFrame extends JFrame {
             btnKategori.setVisible(false);
             btnPelanggan.setVisible(false);
             btnStokMasuk.setVisible(false);
+            btnKasir.setVisible(false);
             btnPenjualan.setVisible(false);
-            btnGantiPassword.setVisible(false);
+            btnUserMenu.setVisible(false);
             btnLogUser.setVisible(false);
             btnLaporan.setVisible(false);
+            btnCetakBarcode.setVisible(false);
         }
     }
-
-    // LOGOUT + LOG KE DB
+// LOGOUT + LOG KE DB
     private void doLogout() {
         int confirm = JOptionPane.showConfirmDialog(
             this,
@@ -391,7 +388,7 @@ public class MainFrame extends JFrame {
         }
 
         SessionManager.clearSession();
-        // new LoginFrame().setVisible(true); // Uncomment saat ada LoginFrame
+        new LoginFrame().setVisible(true);
         dispose();
     }
 }

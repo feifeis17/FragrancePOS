@@ -27,14 +27,9 @@ public class SupplierPanel extends JPanel {
         initUI();
         loadData();
     }
-
-    // ─────────────────────────────────────────────
-    // UI SETUP
-    // ─────────────────────────────────────────────
     private void initUI() {
         add(buildTopBar(), BorderLayout.NORTH);
 
-        // Menerapkan RoundedPanel untuk tabel
         RoundedPanel roundedTableArea = new RoundedPanel(12, ThemeConfig.BG_TABLE, new Color(0x2A, 0x28, 0x48));
         roundedTableArea.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
         roundedTableArea.add(buildTableArea(), BorderLayout.CENTER);
@@ -47,7 +42,6 @@ public class SupplierPanel extends JPanel {
         bar.setOpaque(false);
         bar.setBorder(new EmptyBorder(0, 0, 12, 0));
 
-        // Search Field
         txtSearch = new JTextField();
         txtSearch.setPreferredSize(new Dimension(280, 36));
         txtSearch.setBackground(ThemeConfig.BG_CARD);
@@ -90,7 +84,6 @@ public class SupplierPanel extends JPanel {
             right.add(btnHapus);
         }
 
-        // Tombol Refresh dengan Icon PNG + Hover Effect
         JButton btnRefresh = outlineButton("");
         btnRefresh.setPreferredSize(new Dimension(36, 36)); 
         btnRefresh.setBorder(BorderFactory.createCompoundBorder(
@@ -136,8 +129,6 @@ public class SupplierPanel extends JPanel {
         JScrollPane sp = new JScrollPane(table);
         sp.setBackground(ThemeConfig.BG_TABLE);
         sp.getViewport().setBackground(ThemeConfig.BG_TABLE);
-        
-        // Hapus border kaku karena sudah dibungkus RoundedPanel
         sp.setBorder(BorderFactory.createEmptyBorder()); 
         return sp;
     }
@@ -186,9 +177,6 @@ public class SupplierPanel extends JPanel {
         table.getColumnModel().getColumn(3).setPreferredWidth(400);
     }
 
-    // ─────────────────────────────────────────────
-    // LOAD DATA
-    // ─────────────────────────────────────────────
     private void loadData() {
         new SwingWorker<List<Object[]>, Void>() {
             @Override protected List<Object[]> doInBackground() throws Exception {
@@ -217,9 +205,6 @@ public class SupplierPanel extends JPanel {
         }.execute();
     }
 
-    // ─────────────────────────────────────────────
-    // FORM DIALOG
-    // ─────────────────────────────────────────────
     private void showFormDialog(boolean isEdit) {
         JDialog dialog = new JDialog(
             (Frame) SwingUtilities.getWindowAncestor(this),
@@ -243,8 +228,7 @@ public class SupplierPanel extends JPanel {
         txtAlamat.setLineWrap(true);
         txtAlamat.setWrapStyleWord(true);
         txtAlamat.setBorder(BorderFactory.createEmptyBorder(4, 10, 4, 10));
-        
-        // Membungkus JTextArea dengan JScrollPane
+
         JScrollPane scrollAlamat = new JScrollPane(txtAlamat);
         scrollAlamat.setBorder(BorderFactory.createLineBorder(new Color(0x3D, 0x3B, 0x60), 1, true));
 
@@ -306,9 +290,6 @@ public class SupplierPanel extends JPanel {
         } catch (Exception e) { e.printStackTrace(); }
     }
 
-    // ─────────────────────────────────────────────
-    // CRUD LOGIC
-    // ─────────────────────────────────────────────
     private void doSave(JDialog dialog, boolean isEdit) {
         String nama = txtNama.getText().trim();
         if (nama.isEmpty()) {
@@ -377,9 +358,6 @@ public class SupplierPanel extends JPanel {
         return (int) tableModel.getValueAt(table.convertRowIndexToModel(row), 0);
     }
 
-    // ─────────────────────────────────────────────
-    // HELPERS UI
-    // ─────────────────────────────────────────────
     private JTextField formField() {
         JTextField f = new JTextField();
         f.setPreferredSize(new Dimension(0, 36));

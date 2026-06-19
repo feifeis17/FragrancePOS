@@ -348,8 +348,6 @@ public class KategoriPanel extends JPanel {
         if (row == -1) return -1;
         return (int) tableModel.getValueAt(table.convertRowIndexToModel(row), 0);
     }
-
-// COMPONENT HELPERS
     private JTextField formField() {
         JTextField f = new JTextField();
         f.setPreferredSize(new Dimension(0, 36));

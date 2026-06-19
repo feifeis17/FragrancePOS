@@ -206,9 +206,10 @@ public class LogUserPanel extends JPanel {
                 
                 try (Connection conn = Koneksi.configDB();
                      ResultSet rs = conn.createStatement().executeQuery(
-                         "SELECT l.id_log, u.username, u.role, l.waktu_login, l.waktu_logout " +
+                         "SELECT l.id_log, u.username, r.nama_role AS role, l.waktu_login, l.waktu_logout " +
                          "FROM tb_log_user l " +
                          "JOIN tb_user u ON l.id_user = u.id_user " +
+                         "JOIN tb_role r ON u.id_role = r.id_role " +
                          "ORDER BY l.waktu_login DESC")) {
                     
                     while (rs.next()) {

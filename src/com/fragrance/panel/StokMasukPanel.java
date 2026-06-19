@@ -21,7 +21,6 @@ public class StokMasukPanel extends JPanel {
     private JTable            table;
     private JTextField        txtSearch;
 
-    // Form fields
     private JComboBox<String> cmbSupplier, cmbProduk;
     private JTextField        txtQty, txtHargaBeli;
     private JLabel            lblStokSekarang;
@@ -73,14 +72,12 @@ public class StokMasukPanel extends JPanel {
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         right.setOpaque(false);
 
-        // Admin & Operator bisa tambah
         if (SessionManager.isAdmin() || SessionManager.isOperator()) {
             JButton btnTambah = goldButton("+ Stok Masuk");
             btnTambah.addActionListener(e -> showFormDialog());
             right.add(btnTambah);
         }
 
-        // Hanya Admin bisa hapus
         if (SessionManager.isAdmin()) {
             JButton btnHapus = dangerButton("Hapus");
             btnHapus.addActionListener(e -> doDelete());
@@ -156,14 +153,12 @@ public class StokMasukPanel extends JPanel {
         header.setFont(new Font("Segoe UI", Font.BOLD, 11));
         header.setPreferredSize(new Dimension(0, 38));
 
-        // Default pad kiri
         DefaultTableCellRenderer padLeft = new DefaultTableCellRenderer() {
             { setBorder(new EmptyBorder(0, 14, 0, 0));
               setBackground(ThemeConfig.BG_TABLE);
               setForeground(ThemeConfig.TEXT_BODY); }
         };
 
-        // Tanggal
         table.getColumnModel().getColumn(1).setCellRenderer(new DefaultTableCellRenderer() {
             { setBorder(new EmptyBorder(0, 14, 0, 0)); setBackground(ThemeConfig.BG_TABLE); }
             @Override public Component getTableCellRendererComponent(
@@ -175,10 +170,8 @@ public class StokMasukPanel extends JPanel {
             }
         });
 
-        // Supplier
         table.getColumnModel().getColumn(2).setCellRenderer(padLeft);
 
-        // Produk — terang
         table.getColumnModel().getColumn(3).setCellRenderer(new DefaultTableCellRenderer() {
             { setBorder(new EmptyBorder(0, 14, 0, 0)); setBackground(ThemeConfig.BG_TABLE); }
             @Override public Component getTableCellRendererComponent(
@@ -189,7 +182,6 @@ public class StokMasukPanel extends JPanel {
             }
         });
 
-        // Qty — center, success
         table.getColumnModel().getColumn(4).setCellRenderer(new DefaultTableCellRenderer() {
             @Override public Component getTableCellRendererComponent(
                     JTable t, Object val, boolean sel, boolean foc, int r, int c) {
@@ -203,7 +195,6 @@ public class StokMasukPanel extends JPanel {
             }
         });
 
-        // Harga Beli — currency kanan
         DefaultTableCellRenderer currencyRight = new DefaultTableCellRenderer() {
             @Override public Component getTableCellRendererComponent(
                     JTable t, Object val, boolean sel, boolean foc, int r, int c) {
@@ -225,7 +216,6 @@ public class StokMasukPanel extends JPanel {
         };
         table.getColumnModel().getColumn(5).setCellRenderer(currencyRight);
 
-        // Subtotal — gold
         table.getColumnModel().getColumn(6).setCellRenderer(new DefaultTableCellRenderer() {
             @Override public Component getTableCellRendererComponent(
                     JTable t, Object val, boolean sel, boolean foc, int r, int c) {
@@ -247,15 +237,11 @@ public class StokMasukPanel extends JPanel {
             }
         });
 
-        // Lebar kolom
         int[] widths = {0, 150, 160, 200, 60, 150, 160};
         for (int i = 0; i < widths.length; i++)
             table.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
     }
 
-    // ─────────────────────────────────────────────
-    // LOAD DATA
-    // ─────────────────────────────────────────────
     private void loadData() {
         new SwingWorker<List<Object[]>, Void>() {
             @Override protected List<Object[]> doInBackground() throws Exception {
@@ -321,9 +307,6 @@ public class StokMasukPanel extends JPanel {
         } catch (Exception e) { e.printStackTrace(); }
     }
 
-    // ─────────────────────────────────────────────
-    // FORM DIALOG
-    // ─────────────────────────────────────────────
     private void showFormDialog() {
         loadSupplierMap();
         loadProdukMap();
@@ -345,7 +328,7 @@ public class StokMasukPanel extends JPanel {
         txtHargaBeli = formField();
         txtHargaBeli.putClientProperty("JTextField.placeholderText", "Opsional");
 
-        // Label stok sekarang — update otomatis saat pilih produk
+
         lblStokSekarang = new JLabel("Pilih produk dahulu");
         lblStokSekarang.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         lblStokSekarang.setForeground(ThemeConfig.TEXT_MUTED);
@@ -425,10 +408,6 @@ public class StokMasukPanel extends JPanel {
         g.gridx = 1; g.weightx = 1;
         p.add(field, g);
     }
-
-    // ─────────────────────────────────────────────
-    // SAVE — TRANSAKSI DB (atomic)
-    // ─────────────────────────────────────────────
     private void doSave(JDialog dialog) {
         String produkKey = (String) cmbProduk.getSelectedItem();
         String qtyStr    = txtQty.getText().trim();
@@ -460,10 +439,9 @@ public class StokMasukPanel extends JPanel {
             }
 
             Connection conn = Koneksi.configDB();
-            conn.setAutoCommit(false); // mulai transaksi DB
+            conn.setAutoCommit(false); 
 
             try {
-                // 1. Insert ke tb_stok_masuk
                 PreparedStatement ps1 = conn.prepareStatement(
                     "INSERT INTO tb_stok_masuk " +
                     "(id_supplier, id_produk, qty, harga_beli_satuan) " +
@@ -475,15 +453,13 @@ public class StokMasukPanel extends JPanel {
                 if (harga == 0) ps1.setNull(4, Types.DECIMAL);
                 else ps1.setDouble(4, harga);
                 ps1.executeUpdate();
-
-                // 2. Update stok produk
                 PreparedStatement ps2 = conn.prepareStatement(
                     "UPDATE tb_produk SET stok = stok + ? WHERE id_produk = ?");
                 ps2.setInt(1, qty);
                 ps2.setInt(2, idProduk);
                 ps2.executeUpdate();
 
-                conn.commit(); // commit kedua query sekaligus
+                conn.commit();
                 conn.setAutoCommit(true);
                 conn.close();
 
@@ -494,7 +470,7 @@ public class StokMasukPanel extends JPanel {
                     "Berhasil", JOptionPane.INFORMATION_MESSAGE);
 
             } catch (Exception ex) {
-                conn.rollback(); // batalkan kalau salah satu gagal
+                conn.rollback();
                 conn.setAutoCommit(true);
                 conn.close();
                 throw ex;
@@ -510,9 +486,6 @@ public class StokMasukPanel extends JPanel {
         }
     }
 
-    // ─────────────────────────────────────────────
-    // DELETE — balik stok
-    // ─────────────────────────────────────────────
     private void doDelete() {
         int row = table.getSelectedRow();
         if (row == -1) { showInfo("Pilih data stok masuk yang ingin dihapus."); return; }
@@ -529,7 +502,6 @@ public class StokMasukPanel extends JPanel {
             Connection conn = Koneksi.configDB();
             conn.setAutoCommit(false);
             try {
-                // Ambil id_produk dulu
                 PreparedStatement cek = conn.prepareStatement(
                     "SELECT id_produk FROM tb_stok_masuk WHERE id_masuk = ?");
                 cek.setInt(1, idMasuk);
@@ -537,7 +509,6 @@ public class StokMasukPanel extends JPanel {
                 if (!rs.next()) { conn.rollback(); conn.close(); return; }
                 int idProduk = rs.getInt("id_produk");
 
-                // Cek stok tidak minus
                 PreparedStatement cekStok = conn.prepareStatement(
                     "SELECT stok FROM tb_produk WHERE id_produk = ?");
                 cekStok.setInt(1, idProduk);
@@ -550,13 +521,11 @@ public class StokMasukPanel extends JPanel {
                     return;
                 }
 
-                // Hapus record
                 PreparedStatement del = conn.prepareStatement(
                     "DELETE FROM tb_stok_masuk WHERE id_masuk = ?");
                 del.setInt(1, idMasuk);
                 del.executeUpdate();
 
-                // Kurangi stok
                 PreparedStatement upd = conn.prepareStatement(
                     "UPDATE tb_produk SET stok = stok - ? WHERE id_produk = ?");
                 upd.setInt(1, qty);
@@ -582,20 +551,13 @@ public class StokMasukPanel extends JPanel {
         }
     }
 
-    // ─────────────────────────────────────────────
-    // FILTER
-    // ─────────────────────────────────────────────
     private void filterTable() {
         TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(tableModel);
         table.setRowSorter(sorter);
         String q = txtSearch.getText().trim();
-        // Search di kolom Supplier (2) dan Produk (3)
         sorter.setRowFilter(q.isEmpty() ? null : RowFilter.regexFilter("(?i)" + q, 2, 3));
     }
 
-    // ─────────────────────────────────────────────
-    // HELPERS
-    // ─────────────────────────────────────────────
     private JTextField formField() {
         JTextField f = new JTextField();
         f.setPreferredSize(new Dimension(0, 36));

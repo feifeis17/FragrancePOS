@@ -23,7 +23,6 @@ public class GantiPasswordPanel extends JPanel {
         setBackground(ThemeConfig.BG_PRIMARY);
         initUI();
     }
-//ui
     private void initUI() {
         JPanel centerWrapper = new JPanel(new GridBagLayout());
         centerWrapper.setBackground(ThemeConfig.BG_PRIMARY);
@@ -116,7 +115,6 @@ public class GantiPasswordPanel extends JPanel {
             BorderFactory.createEmptyBorder(4, 10, 4, 10)));
         return f;
     }
-    //logika update
     private void updatePassword() {
         String passLama = new String(txtPasswordLama.getPassword());
         String passBaru = new String(txtPasswordBaru.getPassword());
