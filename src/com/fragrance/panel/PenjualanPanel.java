@@ -665,8 +665,8 @@ public class PenjualanPanel extends JPanel {
                 return;
             }
 
-            final String emailPengirim = "feisalramdhanifeisal@gmail.com"; 
-            final String passwordPengirim = "ouga ccxp kcac uqbf"; 
+            final String emailPengirim    = AppConfig.EMAIL_PENGIRIM;
+            final String passwordPengirim = AppConfig.EMAIL_PASSWORD;
 
             btnKirim.setText("Mengirim...");
             btnKirim.setEnabled(false);
