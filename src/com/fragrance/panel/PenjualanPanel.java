@@ -19,6 +19,13 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
 
+// IMPORT UNTUK PRINTER THERMAL
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
+
+import com.fragrance.util.AppConfig;
 import com.fragrance.util.Koneksi;
 import com.fragrance.util.RoundedPanel;
 import com.fragrance.util.SessionManager;
@@ -49,13 +56,12 @@ public class PenjualanPanel extends JPanel {
     private JTable cartTable;
     private JTextField txtDiskon, txtBayar;
     private JLabel lblSubtotal, lblTotalAkhir, lblKembalian, lblDiskonPersen;
-    
     private DocumentListener calcListener;
 
     private final Map<String, Integer> pelangganMap = new LinkedHashMap<>();
-    private final Map<Integer, Integer> stokMapById = new HashMap<>(); 
+    private final Map<Integer, Integer> stokMapById = new HashMap<>();
     private double totalBelanja = 0;
-    private boolean isUpdatingCart = false; 
+    private boolean isUpdatingCart = false;
 
     public PenjualanPanel() {
         setLayout(new BorderLayout(16, 0));
@@ -63,7 +69,6 @@ public class PenjualanPanel extends JPanel {
         setBorder(new EmptyBorder(10, 10, 10, 10));
 
         initUI();
-        
         loadPelanggan(); 
         loadProduk(""); 
     }
@@ -81,16 +86,27 @@ public class PenjualanPanel extends JPanel {
         txtSearchBarcode.setBackground(ThemeConfig.BG_CARD);
         txtSearchBarcode.setForeground(ThemeConfig.TEXT_HEAD);
         txtSearchBarcode.setCaretColor(ThemeConfig.ACCENT);
-        txtSearchBarcode.putClientProperty("JTextField.placeholderText", "Ketik Nama Produk...");
+        txtSearchBarcode.putClientProperty("JTextField.placeholderText", "Ketik Nama Produk atau Tembak Barcode di Sini...");
         txtSearchBarcode.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(0x3D, 0x3B, 0x60), 1, true),
             BorderFactory.createEmptyBorder(4, 14, 4, 14)
         ));
-
+        
+        // Listener untuk ngetik manual (Live Search)
         txtSearchBarcode.getDocument().addDocumentListener(new DocumentListener() {
             public void insertUpdate(DocumentEvent e) { loadProduk(txtSearchBarcode.getText()); }
             public void removeUpdate(DocumentEvent e) { loadProduk(txtSearchBarcode.getText()); }
             public void changedUpdate(DocumentEvent e) { loadProduk(txtSearchBarcode.getText()); }
+        });
+
+        // KODE BARU: LOGIKA BARCODE SCANNER SUNGGUHAN (Deteksi tombol Enter dari Alat Scanner)
+        txtSearchBarcode.addActionListener(e -> {
+            String keyword = txtSearchBarcode.getText().trim();
+            if (!keyword.isEmpty()) {
+                tambahProdukByScan(keyword);
+                txtSearchBarcode.setText(""); // Bersihkan kolom agar siap ditembak barcode selanjutnya
+                txtSearchBarcode.requestFocusInWindow(); // Kembalikan kursor ke kolom ini
+            }
         });
 
         JPanel btnSearchArea = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
@@ -102,11 +118,13 @@ public class PenjualanPanel extends JPanel {
         
         JButton btnScan = createGoldButton("Scan Barcode", "barcode_w.png");
         btnScan.setPreferredSize(new Dimension(140, 40));
-        btnScan.addActionListener(e -> JOptionPane.showMessageDialog(this, "Fitur Scanner segera hadir!", "Gimmick", JOptionPane.INFORMATION_MESSAGE));
+        btnScan.addActionListener(e -> {
+            txtSearchBarcode.requestFocusInWindow();
+            JOptionPane.showMessageDialog(this, "Silakan arahkan kursor ke kolom pencarian, lalu tembak barcode menggunakan alat Scanner!", "Info Scanner", JOptionPane.INFORMATION_MESSAGE);
+        });
 
         btnSearchArea.add(btnCari);
         btnSearchArea.add(btnScan);
-
         searchBarArea.add(txtSearchBarcode, BorderLayout.CENTER);
         searchBarArea.add(btnSearchArea, BorderLayout.EAST);
 
@@ -129,14 +147,12 @@ public class PenjualanPanel extends JPanel {
 
         JPanel cartHeader = new JPanel(new BorderLayout(0, 10));
         cartHeader.setOpaque(false);
-        
         JPanel titleInvArea = new JPanel(new BorderLayout());
         titleInvArea.setOpaque(false);
         
         JLabel lblTitleCart = new JLabel("Keranjang Belanja");
         lblTitleCart.setFont(new Font("Segoe UI", Font.BOLD, 15));
         lblTitleCart.setForeground(ThemeConfig.TEXT_HEAD);
-        
         lblInvoice = new JLabel(generateInvoiceNumber());
         lblInvoice.setFont(new Font("Segoe UI", Font.BOLD, 13));
         lblInvoice.setForeground(ThemeConfig.ACCENT);
@@ -169,8 +185,7 @@ public class PenjualanPanel extends JPanel {
         JScrollPane scrollCart = new JScrollPane(cartTable);
         scrollCart.getViewport().setBackground(ThemeConfig.BG_CARD);
         scrollCart.setBorder(BorderFactory.createLineBorder(new Color(0x2A, 0x28, 0x48)));
-        scrollCart.setPreferredSize(new Dimension(0, 160)); 
-
+        scrollCart.setPreferredSize(new Dimension(0, 160));
         JPanel cartActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
         cartActions.setOpaque(false);
         JButton btnHapusItem = new JButton("Hapus Item");
@@ -184,7 +199,6 @@ public class PenjualanPanel extends JPanel {
         JPanel paymentArea = new JPanel();
         paymentArea.setLayout(new BoxLayout(paymentArea, BoxLayout.Y_AXIS));
         paymentArea.setOpaque(false);
-
         lblSubtotal   = calcLabel("Rp 0");
         
         JPanel panelDiskon = new JPanel(new BorderLayout(8, 0));
@@ -196,7 +210,6 @@ public class PenjualanPanel extends JPanel {
         lblDiskonPersen.setPreferredSize(new Dimension(45, 30));
         panelDiskon.add(txtDiskon, BorderLayout.CENTER);
         panelDiskon.add(lblDiskonPersen, BorderLayout.EAST);
-
         lblTotalAkhir = calcLabel("Rp 0");
         lblTotalAkhir.setFont(new Font("Segoe UI", Font.BOLD, 20));
         lblTotalAkhir.setForeground(ThemeConfig.ACCENT);
@@ -223,7 +236,6 @@ public class PenjualanPanel extends JPanel {
             }
             hitungTotalDanKembalian(); 
         });
-
         paymentArea.add(cartActions);
         paymentArea.add(Box.createVerticalStrut(5));
         paymentArea.add(calcRow("Subtotal:", lblSubtotal));
@@ -244,7 +256,6 @@ public class PenjualanPanel extends JPanel {
         paymentArea.add(Box.createVerticalStrut(6));
         paymentArea.add(calcRow("Kembalian:", lblKembalian));
         paymentArea.add(Box.createVerticalStrut(12));
-
         JButton btnBayar = createGoldButton("PROSES PEMBAYARAN", null);
         btnBayar.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnBayar.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
@@ -258,7 +269,6 @@ public class PenjualanPanel extends JPanel {
 
         add(leftPanel, BorderLayout.CENTER);
         add(rightPanel, BorderLayout.EAST);
-
         calcListener = new DocumentListener() {
             public void insertUpdate(DocumentEvent e) { hitungTotalDanKembalian(); }
             public void removeUpdate(DocumentEvent e) { hitungTotalDanKembalian(); }
@@ -267,9 +277,29 @@ public class PenjualanPanel extends JPanel {
         txtDiskon.getDocument().addDocumentListener(calcListener);
         txtBayar.getDocument().addDocumentListener(calcListener);
     }
+
+    // METHOD BARU: Mengecek database untuk auto-insert item dari Scanner
+    private void tambahProdukByScan(String keyword) {
+        String sql = "SELECT id_produk, nama_produk, harga_jual, stok FROM tb_produk WHERE stok > 0 AND (id_produk = ? OR nama_produk LIKE ?) LIMIT 1";
+        try (Connection conn = Koneksi.configDB(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            try { 
+                ps.setInt(1, Integer.parseInt(keyword)); 
+            } catch(Exception ex) { 
+                ps.setInt(1, -1); 
+            }
+            ps.setString(2, keyword + "%");
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                tambahKeKeranjang(rs.getInt("id_produk"), rs.getString("nama_produk"), rs.getDouble("harga_jual"), rs.getInt("stok"));
+            } else {
+                java.awt.Toolkit.getDefaultToolkit().beep(); // Bunyi error jika barcode tak dikenali
+            }
+        } catch (Exception e) {}
+    }
+
     private void handleQtyEdit(TableModelEvent e) {
         if (e.getType() == TableModelEvent.UPDATE && e.getColumn() == 3) {
-            if (isUpdatingCart) return; 
+            if (isUpdatingCart) return;
             int row = e.getFirstRow();
             isUpdatingCart = true;
             try {
@@ -277,7 +307,6 @@ public class PenjualanPanel extends JPanel {
                 int idProd = (int) cartModel.getValueAt(row, 0);
                 double harga = (double) cartModel.getValueAt(row, 2);
                 int stokMaks = stokMapById.getOrDefault(idProd, 0);
-                
                 if (newQty <= 0) {
                     JOptionPane.showMessageDialog(this, "Qty minimal 1. Gunakan 'Hapus Item' untuk membatalkan.", "Peringatan", JOptionPane.WARNING_MESSAGE);
                     cartModel.setValueAt(1, row, 3);
@@ -287,14 +316,14 @@ public class PenjualanPanel extends JPanel {
                     cartModel.setValueAt(stokMaks, row, 3);
                     cartModel.setValueAt(stokMaks * harga, row, 4); 
                 } else {
-                    cartModel.setValueAt(newQty * harga, row, 4); 
+                    cartModel.setValueAt(newQty * harga, row, 4);
                 }
             } catch (Exception ex) {
                 cartModel.setValueAt(1, row, 3);
                 cartModel.setValueAt((double)cartModel.getValueAt(row, 2), row, 4);
             }
             isUpdatingCart = false;
-            hitungTotalDanKembalian(); 
+            hitungTotalDanKembalian();
         }
     }
 
@@ -349,7 +378,8 @@ public class PenjualanPanel extends JPanel {
         int targetRow = -1, qtyInCart = 0;
         for (int i = 0; i < cartModel.getRowCount(); i++) {
             if ((int) cartModel.getValueAt(i, 0) == idProduk) {
-                targetRow = i; qtyInCart = (int) cartModel.getValueAt(i, 3); break;
+                targetRow = i;
+                qtyInCart = (int) cartModel.getValueAt(i, 3); break;
             }
         }
         if (qtyInCart + 1 > stokMax) {
@@ -374,9 +404,10 @@ public class PenjualanPanel extends JPanel {
 
     private void hitungTotalDanKembalian() {
         if (cartModel.getRowCount() == 0) {
-            lblSubtotal.setText("Rp 0"); lblTotalAkhir.setText("Rp 0"); lblKembalian.setText("Rp 0");
+            lblSubtotal.setText("Rp 0");
+            lblTotalAkhir.setText("Rp 0"); lblKembalian.setText("Rp 0");
             lblKembalian.setForeground(ThemeConfig.SUCCESS); lblDiskonPersen.setText("(0%)");
-            totalBelanja = 0; return; 
+            totalBelanja = 0; return;
         }
         double subtotal = 0, diskon = 0;
         for (int i = 0; i < cartModel.getRowCount(); i++) subtotal += (double) cartModel.getValueAt(i, 4);
@@ -388,7 +419,6 @@ public class PenjualanPanel extends JPanel {
         NumberFormat rp = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
         lblSubtotal.setText(rp.format(subtotal).replace(",00", ""));
         lblTotalAkhir.setText(rp.format(totalBelanja).replace(",00", ""));
-        
         if (cmbMetodeBayar.getSelectedIndex() == 1) { 
             if (txtBayar.getDocument() != null) txtBayar.getDocument().removeDocumentListener(calcListener);
             txtBayar.setText(String.valueOf((long) totalBelanja));
@@ -396,23 +426,31 @@ public class PenjualanPanel extends JPanel {
         }
 
         try {
-            if (txtBayar.getText().trim().isEmpty()) { lblKembalian.setText("Rp 0"); lblKembalian.setForeground(ThemeConfig.SUCCESS); return; }
+            if (txtBayar.getText().trim().isEmpty()) { lblKembalian.setText("Rp 0");
+            lblKembalian.setForeground(ThemeConfig.SUCCESS); return; }
             double bayar = Double.parseDouble(txtBayar.getText().trim());
             double kembali = bayar - totalBelanja;
-            if (kembali < 0) { lblKembalian.setText("Kurang " + rp.format(Math.abs(kembali)).replace(",00", "")); lblKembalian.setForeground(ThemeConfig.DANGER); } 
-            else { lblKembalian.setText(rp.format(kembali).replace(",00", "")); lblKembalian.setForeground(ThemeConfig.SUCCESS); }
-        } catch (NumberFormatException e) { lblKembalian.setText("Input Invalid"); lblKembalian.setForeground(ThemeConfig.DANGER); }
+            if (kembali < 0) { lblKembalian.setText("Kurang " + rp.format(Math.abs(kembali)).replace(",00", "")); lblKembalian.setForeground(ThemeConfig.DANGER);
+            } 
+            else { lblKembalian.setText(rp.format(kembali).replace(",00", "")); lblKembalian.setForeground(ThemeConfig.SUCCESS);
+            }
+        } catch (NumberFormatException e) { lblKembalian.setText("Input Invalid"); lblKembalian.setForeground(ThemeConfig.DANGER);
+        }
     }
 
     private void processCheckout() {
-        if (cartModel.getRowCount() == 0) { JOptionPane.showMessageDialog(this, "Keranjang kosong!"); return; }
+        if (cartModel.getRowCount() == 0) { JOptionPane.showMessageDialog(this, "Keranjang kosong!");
+        return; }
         double uangBayar = 0;
-        try { uangBayar = Double.parseDouble(txtBayar.getText().trim()); } catch (Exception e) { JOptionPane.showMessageDialog(this, "Input bayar tidak valid."); return; }
-        if (uangBayar < totalBelanja) { JOptionPane.showMessageDialog(this, "Uang pembayaran kurang!", "Peringatan", JOptionPane.WARNING_MESSAGE); return; }
+        try { uangBayar = Double.parseDouble(txtBayar.getText().trim());
+        } catch (Exception e) { JOptionPane.showMessageDialog(this, "Input bayar tidak valid."); return;
+        }
+        if (uangBayar < totalBelanja) { JOptionPane.showMessageDialog(this, "Uang pembayaran kurang!", "Peringatan", JOptionPane.WARNING_MESSAGE); return;
+        }
 
         int idPelanggan = pelangganMap.getOrDefault((String) cmbPelanggan.getSelectedItem(), 0);
         try (Connection conn = Koneksi.configDB()) {
-            conn.setAutoCommit(false); 
+            conn.setAutoCommit(false);
             try {
                 PreparedStatement psJual = conn.prepareStatement("INSERT INTO tb_penjualan (tanggal, id_pelanggan, id_user, total_harga, metode_bayar) VALUES (NOW(), ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
                 if (idPelanggan == 0) psJual.setNull(1, Types.INTEGER); else psJual.setInt(1, idPelanggan);
@@ -430,13 +468,11 @@ public class PenjualanPanel extends JPanel {
                     psDetail.setDouble(4, (double) cartModel.getValueAt(i, 2)); psDetail.setDouble(5, (double) cartModel.getValueAt(i, 4));
                     psDetail.addBatch(); psStok.setInt(1, qty); psStok.setInt(2, idProd); psStok.addBatch();
                 }
-                psDetail.executeBatch(); psStok.executeBatch(); conn.commit(); 
-
+                psDetail.executeBatch(); psStok.executeBatch(); conn.commit();
                 String invoiceNo = lblInvoice.getText();
                 String namaPembeli = cmbPelanggan.getSelectedItem().toString();
                 double uangKembali = 0;
                 double diskon = 0;
-                
                 try {
                     uangKembali = Double.parseDouble(txtBayar.getText().trim()) - totalBelanja;
                     if (!txtDiskon.getText().trim().isEmpty()) {
@@ -444,8 +480,7 @@ public class PenjualanPanel extends JPanel {
                     }
                 } catch (Exception ignored) {}
                 
-                showPostCheckoutAction(idPenjualanBaru, invoiceNo, namaPembeli, totalBelanja, diskon, uangKembali);
-
+                showPostCheckoutAction(idPenjualanBaru, invoiceNo, namaPembeli, totalBelanja, diskon, uangKembali, uangBayar);
                 cartModel.setRowCount(0); 
                 txtDiskon.setText(""); 
                 cmbMetodeBayar.setSelectedIndex(0); 
@@ -454,8 +489,10 @@ public class PenjualanPanel extends JPanel {
                 lblInvoice.setText(generateInvoiceNumber()); 
                 hitungTotalDanKembalian(); 
                 loadProduk("");
-            } catch (Exception ex) { conn.rollback(); throw ex; }
-        } catch (Exception e) { JOptionPane.showMessageDialog(this, "Gagal: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE); }
+            } catch (Exception ex) { conn.rollback(); throw ex;
+            }
+        } catch (Exception e) { JOptionPane.showMessageDialog(this, "Gagal: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
     private JPanel createProductCard(int id, String nama, String hargaStr, double hargaReal, int stok) {
         RoundedPanel card = new RoundedPanel(12, ThemeConfig.BG_CARD, new Color(0x3D, 0x3B, 0x60));
@@ -477,7 +514,6 @@ public class PenjualanPanel extends JPanel {
                 int newW = 80, newH = 80;
                 if (origW > origH) newH = (origH * 80) / origW;
                 else newW = (origW * 80) / origH;
-                
                 Image img = origImg.getScaledInstance(newW, newH, Image.SCALE_SMOOTH);
                 lblImg.setIcon(new ImageIcon(img));
             } else {
@@ -520,7 +556,6 @@ public class PenjualanPanel extends JPanel {
             public void mouseExited(java.awt.event.MouseEvent e) { card.setBackground(ThemeConfig.BG_CARD); }
             public void mouseClicked(java.awt.event.MouseEvent e) { tambahKeKeranjang(id, nama, hargaReal, stok); }
         });
-        
         return card;
     }
     private ImageIcon loadIcon(String filename, int size) {
@@ -585,79 +620,96 @@ public class PenjualanPanel extends JPanel {
     }
 
     private void styleTable(JTable tbl) {
-        tbl.setBackground(ThemeConfig.BG_CARD); tbl.setForeground(ThemeConfig.TEXT_BODY);
-        tbl.setFont(new Font("Segoe UI", Font.PLAIN, 12)); tbl.setRowHeight(26); // Row height dikecilkan
-        tbl.setShowVerticalLines(false); tbl.setSelectionBackground(new Color(0x3A, 0x38, 0x60));
+        tbl.setBackground(ThemeConfig.BG_CARD);
+        tbl.setForeground(ThemeConfig.TEXT_BODY);
+        tbl.setFont(new Font("Segoe UI", Font.PLAIN, 12)); tbl.setRowHeight(26); 
+        tbl.setShowVerticalLines(false);
+        tbl.setSelectionBackground(new Color(0x3A, 0x38, 0x60));
         tbl.setSelectionForeground(ThemeConfig.ACCENT);
         JTableHeader h = tbl.getTableHeader(); h.setBackground(ThemeConfig.BG_PRIMARY);
         h.setForeground(ThemeConfig.TEXT_MUTED); h.setFont(new Font("Segoe UI", Font.BOLD, 11));
     }
 
     private JPanel calcRow(String title, JComponent valComp) {
-        JPanel p = new JPanel(new BorderLayout()); p.setOpaque(false);
+        JPanel p = new JPanel(new BorderLayout());
+        p.setOpaque(false);
         JLabel l = new JLabel(title); l.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         l.setForeground(ThemeConfig.TEXT_MUTED); p.add(l, BorderLayout.WEST); p.add(valComp, BorderLayout.EAST); return p;
     }
 
     private JLabel calcLabel(String text) {
-        JLabel l = new JLabel(text); l.setFont(new Font("Segoe UI", Font.BOLD, 13)); l.setForeground(ThemeConfig.TEXT_HEAD); return l;
+        JLabel l = new JLabel(text);
+        l.setFont(new Font("Segoe UI", Font.BOLD, 13)); l.setForeground(ThemeConfig.TEXT_HEAD); return l;
     }
 
     private JTextField calcTextField() {
-        JTextField f = new JTextField(); f.setPreferredSize(new Dimension(130, 26));
+        JTextField f = new JTextField();
+        f.setPreferredSize(new Dimension(130, 26));
         f.setHorizontalAlignment(SwingConstants.RIGHT); f.setBackground(ThemeConfig.BG_PRIMARY);
         f.setForeground(ThemeConfig.TEXT_HEAD); f.setCaretColor(ThemeConfig.ACCENT);
         f.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0x3D, 0x3B, 0x60)), BorderFactory.createEmptyBorder(2, 6, 2, 6))); return f;
     }
-//fitur invoice
-    private void showPostCheckoutAction(int idPenjualan, String noInvoice, String namaPelanggan, double total, double diskon, double kembali) {
+
+    // =========================================================
+    // FITUR POPUP KASIR (SUDAH DITAMBAH STRUK THERMAL)
+    // =========================================================
+    private void showPostCheckoutAction(int idPenjualan, String noInvoice, String namaPelanggan, double total, double diskon, double kembali, double bayar) {
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Transaksi Berhasil", true);
-        dialog.setSize(450, 380);
+        dialog.setSize(480, 520); // DIPERBESAR AGAR MUAT 1 TOMBOL TAMBAHAN
         dialog.setLocationRelativeTo(this);
         dialog.setResizable(false);
 
         RoundedPanel panel = new RoundedPanel(16, ThemeConfig.BG_PRIMARY, ThemeConfig.ACCENT);
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBorder(new EmptyBorder(20, 24, 20, 24));
+        panel.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.insets = new Insets(5, 0, 5, 0); 
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.CENTER;
 
+        // --- 1. LABEL & GIF ---
         JLabel lblSukses = new JLabel("TRANSAKSI SUKSES!");
-        lblSukses.setAlignmentX(Component.CENTER_ALIGNMENT);
         lblSukses.setFont(new Font("Segoe UI", Font.BOLD, 22));
         lblSukses.setForeground(ThemeConfig.SUCCESS);
-        lblSukses.setAlignmentX(Component.CENTER_ALIGNMENT);
+        lblSukses.setHorizontalAlignment(SwingConstants.CENTER);
+        lblSukses.setHorizontalTextPosition(SwingConstants.CENTER);
+        lblSukses.setVerticalTextPosition(SwingConstants.BOTTOM);
+        lblSukses.setIconTextGap(10);
 
         try {
-               java.net.URL gifUrl = getClass().getResource("/com/fragrance/resources/icons/success.gif");
-               if (gifUrl != null) {
-                   ImageIcon originalIcon = new ImageIcon(gifUrl);
-                   Image img = originalIcon.getImage().getScaledInstance(64, 64, Image.SCALE_DEFAULT);
-                   
-                   lblSukses.setIcon(new ImageIcon(img));
-                   lblSukses.setHorizontalTextPosition(JLabel.CENTER);
-                   lblSukses.setVerticalTextPosition(JLabel.BOTTOM);
-                   lblSukses.setIconTextGap(10);
-               }
-           } catch (Exception e) {
-               lblSukses.setIcon(null);
-           }
+            java.net.URL gifUrl = getClass().getResource("/com/fragrance/resources/icons/success.gif");
+            if (gifUrl != null) {
+                lblSukses.setIcon(new ImageIcon(gifUrl)); 
+            }
+        } catch (Exception e) {}
 
+        panel.add(lblSukses, gbc);
+
+        // --- 2. NO INVOICE ---
+        gbc.gridy++;
+        gbc.insets = new Insets(0, 0, 20, 0);
         JLabel lblInv = new JLabel(noInvoice);
         lblInv.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         lblInv.setForeground(ThemeConfig.TEXT_MUTED);
-        lblInv.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panel.add(lblInv, gbc);
 
+        // --- 3. PANEL EMAIL ---
+        gbc.gridy++;
+        gbc.insets = new Insets(0, 0, 15, 0);
+        gbc.fill = GridBagConstraints.HORIZONTAL; 
+        
         JPanel emailPanel = new JPanel(new BorderLayout(10, 0));
+        emailPanel.setPreferredSize(new Dimension(360, 60)); 
         emailPanel.setOpaque(false);
-        emailPanel.setBorder(BorderFactory.createTitledBorder(new EmptyBorder(10,0,0,0), "Kirim Invoice ke Email Pelanggan", 0, 0, new Font("Segoe UI", Font.PLAIN, 12), ThemeConfig.TEXT_MUTED));
+        emailPanel.setBorder(BorderFactory.createTitledBorder(null, "Kirim Invoice ke Email Pelanggan", 0, 0, new Font("Segoe UI", Font.PLAIN, 12), ThemeConfig.TEXT_MUTED));
         
         JTextField txtEmail = new JTextField();
-        txtEmail.setPreferredSize(new Dimension(0, 36));
         txtEmail.setBackground(ThemeConfig.BG_CARD);
         txtEmail.setForeground(ThemeConfig.TEXT_HEAD);
-        txtEmail.setCaretColor(ThemeConfig.ACCENT);
         txtEmail.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0x3D, 0x3B, 0x60)), BorderFactory.createEmptyBorder(0, 10, 0, 10)));
         
-        JButton btnKirim = createOutlineButton("Kirim Invoice", "report_w.png");
+        JButton btnKirim = createOutlineButton("Kirim", null);
         btnKirim.addActionListener(e -> {
             String emailTujuan = txtEmail.getText().trim();
             if(emailTujuan.isEmpty() || !emailTujuan.contains("@")) {
@@ -665,8 +717,8 @@ public class PenjualanPanel extends JPanel {
                 return;
             }
 
-            final String emailPengirim    = AppConfig.EMAIL_PENGIRIM;
-            final String passwordPengirim = AppConfig.EMAIL_PASSWORD;
+            final String emailPengirim = AppConfig.EMAIL_PENGIRIM; 
+            final String passwordPengirim = AppConfig.EMAIL_PASSWORD; 
 
             btnKirim.setText("Mengirim...");
             btnKirim.setEnabled(false);
@@ -674,90 +726,178 @@ public class PenjualanPanel extends JPanel {
             new SwingWorker<Boolean, Void>() {
                 @Override
                 protected Boolean doInBackground() throws Exception {
-                    Properties props = new Properties();
+                    java.util.Properties props = new java.util.Properties();
                     props.put("mail.smtp.auth", "true");
                     props.put("mail.smtp.starttls.enable", "true");
                     props.put("mail.smtp.host", "smtp.gmail.com");
                     props.put("mail.smtp.port", "587");
 
-                    Session session = Session.getInstance(props, new javax.mail.Authenticator() {
-                        protected PasswordAuthentication getPasswordAuthentication() {
-                            return new PasswordAuthentication(emailPengirim, passwordPengirim);
+                    javax.mail.Session session = javax.mail.Session.getInstance(props, new javax.mail.Authenticator() {
+                        protected javax.mail.PasswordAuthentication getPasswordAuthentication() {
+                            return new javax.mail.PasswordAuthentication(emailPengirim, passwordPengirim);
                         }
                     });
 
-                    // Membuat isi email
-                    Message message = new MimeMessage(session);
-                    message.setFrom(new InternetAddress(emailPengirim, "Decium Perfumery"));
-                    message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(emailTujuan));
+                    javax.mail.Message message = new javax.mail.internet.MimeMessage(session);
+                    message.setFrom(new javax.mail.internet.InternetAddress(emailPengirim, "Decium Perfumery"));
+                    message.setRecipients(javax.mail.Message.RecipientType.TO, javax.mail.internet.InternetAddress.parse(emailTujuan));
                     message.setSubject("Invoice Pembelian - " + noInvoice);
 
-                    // Body Text Email
-                    MimeBodyPart textPart = new MimeBodyPart();
+                    javax.mail.internet.MimeBodyPart textPart = new javax.mail.internet.MimeBodyPart();
                     textPart.setText("Halo " + namaPelanggan + ",\n\nTerima kasih telah berbelanja di Decium Perfumery. " +
                                      "Silakan temukan rincian transaksi Anda pada lampiran PDF di bawah ini.\n\n" +
                                      "Salam Wangi,\nTim Decium");
-                    MimeBodyPart attachmentPart = new MimeBodyPart();
+
+                    javax.mail.internet.MimeBodyPart attachmentPart = new javax.mail.internet.MimeBodyPart();
                     File pdfFile = new File("Invoice_" + noInvoice.replace("/", "_") + ".pdf");
-                
                     if (!pdfFile.exists()) {
                         throw new Exception("Silakan klik 'Cetak Invoice PDF' terlebih dahulu sebelum mengirim email!");
                     }
-                    
                     attachmentPart.attachFile(pdfFile);
-                    Multipart multipart = new MimeMultipart();
+
+                    javax.mail.Multipart multipart = new javax.mail.internet.MimeMultipart();
                     multipart.addBodyPart(textPart);
                     multipart.addBodyPart(attachmentPart);
 
                     message.setContent(multipart);
-                    Transport.send(message); 
+                    javax.mail.Transport.send(message); 
                     return true;
                 }
-
                 @Override
                 protected void done() {
                     try {
-                        get();
+                        get(); 
                         JOptionPane.showMessageDialog(dialog, "Sukses! Invoice berhasil dikirim ke " + emailTujuan);
-                        btnKirim.setText("Kirim Invoice");
-                        btnKirim.setEnabled(true);
                     } catch (Exception ex) {
                         String msg = (ex.getCause() != null) ? ex.getCause().getMessage() : ex.getMessage();
                         JOptionPane.showMessageDialog(dialog, "Gagal mengirim email:\n" + msg, "Error", JOptionPane.ERROR_MESSAGE);
-                        btnKirim.setText("Kirim Invoice");
+                    } finally {
+                        btnKirim.setText("Kirim");
                         btnKirim.setEnabled(true);
                     }
                 }
             }.execute();
         });
-
+        
         emailPanel.add(txtEmail, BorderLayout.CENTER);
         emailPanel.add(btnKirim, BorderLayout.EAST);
+        panel.add(emailPanel, gbc);
 
-        JButton btnCetak = createGoldButton("Cetak Invoice PDF (A4)", "report_w.png");
-        btnCetak.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
-        btnCetak.addActionListener(e -> {
-            exportInvoicePDF(idPenjualan, noInvoice, namaPelanggan, total, diskon, kembali);
-        });
+        // --- 4. TOMBOL CETAK STRUK THERMAL ---
+        gbc.gridy++;
+        gbc.insets = new Insets(5, 0, 5, 0);
+        JButton btnCetakThermal = createGoldButton("Cetak Struk Thermal (58mm)", null);
+        btnCetakThermal.setPreferredSize(new Dimension(360, 42)); 
+        btnCetakThermal.addActionListener(e -> cetakStrukThermal(idPenjualan, noInvoice, namaPelanggan, total, diskon, kembali, bayar));
+        panel.add(btnCetakThermal, gbc);
 
+        // --- 5. TOMBOL CETAK INVOICE PDF ---
+        gbc.gridy++;
+        gbc.insets = new Insets(5, 0, 5, 0);
+        JButton btnCetak = createOutlineButton("Cetak Invoice PDF (A4)", null);
+        btnCetak.setPreferredSize(new Dimension(360, 42)); 
+        btnCetak.addActionListener(e -> exportInvoicePDF(idPenjualan, noInvoice, namaPelanggan, total, diskon, kembali));
+        panel.add(btnCetak, gbc);
+
+        // --- 6. TOMBOL TUTUP ---
+        gbc.gridy++;
+        gbc.insets = new Insets(5, 0, 10, 0);
         JButton btnTutup = createOutlineButton("Tutup Layar", null);
-        btnTutup.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
+        btnTutup.setPreferredSize(new Dimension(360, 40)); 
         btnTutup.addActionListener(e -> dialog.dispose());
-
-        panel.add(lblSukses);
-        panel.add(Box.createVerticalStrut(4));
-        panel.add(lblInv);
-        panel.add(Box.createVerticalStrut(20));
-        panel.add(emailPanel);
-        panel.add(Box.createVerticalStrut(24));
-        panel.add(btnCetak);
-        panel.add(Box.createVerticalStrut(10));
-        panel.add(btnTutup);
+        panel.add(btnTutup, gbc);
 
         dialog.setContentPane(panel);
         dialog.setVisible(true);
     }
 
+    // =========================================================
+    // MESIN CETAK STRUK THERMAL (58MM) - BAWAAN JAVA MURNI
+    // =========================================================
+    private void cetakStrukThermal(int idPenjualan, String noInvoice, String namaPelanggan, double total, double diskon, double kembali, double bayar) {
+        PrinterJob pj = PrinterJob.getPrinterJob();
+        pj.setPrintable((Graphics g, PageFormat pf, int pageIndex) -> {
+            if (pageIndex > 0) return Printable.NO_SUCH_PAGE;
+            Graphics2D g2d = (Graphics2D) g;
+            g2d.translate(pf.getImageableX(), pf.getImageableY());
+            
+            // Pengaturan Font Struk
+            Font fHeader = new Font("Monospaced", Font.BOLD, 12);
+            Font fBody = new Font("Monospaced", Font.PLAIN, 9);
+            Font fBold = new Font("Monospaced", Font.BOLD, 9);
+            
+            int y = 20;
+            int x = 10; // Margin kiri
+            int width = 140; // Max lebar untuk printer 58mm
+            
+            // Header Toko
+            g2d.setFont(fHeader);
+            g2d.drawString("DECIUM PERFUMERY", x + 10, y); y += 15;
+            
+            g2d.setFont(fBody);
+            g2d.drawString("Jl. Raya Cileunyi, Bandung", x, y); y += 15;
+            g2d.drawString("=========================", x, y); y += 15;
+            g2d.drawString("Inv: " + noInvoice, x, y); y += 15;
+            g2d.drawString("Plg: " + (namaPelanggan.length() > 15 ? namaPelanggan.substring(0, 15) : namaPelanggan), x, y); y += 15;
+            g2d.drawString("=========================", x, y); y += 15;
+            
+            // Mengambil Item Keranjang dari Database
+            try (Connection conn = Koneksi.configDB();
+                 PreparedStatement ps = conn.prepareStatement(
+                     "SELECT p.nama_produk, dp.qty, dp.harga_satuan, dp.subtotal " +
+                     "FROM tb_detail_penjualan dp JOIN tb_produk p ON dp.id_produk = p.id_produk " +
+                     "WHERE dp.id_penjualan = ?")) {
+                ps.setInt(1, idPenjualan);
+                ResultSet rs = ps.executeQuery();
+                NumberFormat rp = NumberFormat.getInstance(new Locale("id", "ID"));
+                
+                while (rs.next()) {
+                    String nama = rs.getString("nama_produk");
+                    if(nama.length() > 22) nama = nama.substring(0, 22);
+                    g2d.drawString(nama, x, y); y += 12;
+                    
+                    String qtyHarga = rs.getInt("qty") + "x" + rp.format(rs.getDouble("harga_satuan"));
+                    String sub = rp.format(rs.getDouble("subtotal"));
+                    
+                    // Format rata kanan untuk subtotal
+                    g2d.drawString(qtyHarga, x, y);
+                    g2d.drawString(sub, x + width - g2d.getFontMetrics().stringWidth(sub), y);
+                    y += 15;
+                }
+            } catch (Exception e) {}
+            
+            // Footer & Total
+            g2d.drawString("-------------------------", x, y); y += 15;
+            NumberFormat rp = NumberFormat.getInstance(new Locale("id", "ID"));
+            if (diskon > 0) {
+                g2d.drawString("Subtotal : " + rp.format(total + diskon), x, y); y += 12;
+                g2d.drawString("Diskon   : " + rp.format(diskon), x, y); y += 12;
+            }
+            g2d.setFont(fBold);
+            g2d.drawString("TOTAL    : " + rp.format(total), x, y); y += 15;
+            
+            g2d.setFont(fBody);
+            g2d.drawString("Bayar    : " + rp.format(bayar), x, y); y += 12;
+            g2d.drawString("Kembali  : " + rp.format(kembali), x, y); y += 15;
+            
+            g2d.drawString("=========================", x, y); y += 15;
+            g2d.drawString("      TERIMA KASIH       ", x, y); y += 15;
+            
+            return Printable.PAGE_EXISTS;
+        });
+
+        if (pj.printDialog()) {
+            try { 
+                pj.print(); 
+            } catch (PrinterException ex) { 
+                JOptionPane.showMessageDialog(this, "Gagal memproses print: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE); 
+            }
+        }
+    }
+
+    // =========================================================
+    // MESIN CETAK INVOICE PDF (A4)
+    // =========================================================
     private void exportInvoicePDF(int idPenjualan, String noInvoice, String namaPelanggan, double total, double diskon, double kembali) {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Simpan Invoice PDF");
@@ -765,7 +905,6 @@ public class PenjualanPanel extends JPanel {
         
         if (fileChooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
         File fileToSave = fileChooser.getSelectedFile();
-
         try {
             Document document = new Document(PageSize.A4, 40, 40, 40, 40);
             PdfWriter writer = PdfWriter.getInstance(document, new FileOutputStream(fileToSave));
@@ -786,14 +925,12 @@ public class PenjualanPanel extends JPanel {
             cellStore.addElement(new Paragraph("Jl. Raya Cileunyi - Bandung, Jawa Barat", fNormal));
             cellStore.addElement(new Paragraph("Telp: 0812-3456-7890 | IG: @decium.perfume", fNormal));
             headerTable.addCell(cellStore);
-
             PdfContentByte cb = writer.getDirectContent();
             Barcode128 barcode = new Barcode128();
             barcode.setCode(noInvoice);
             barcode.setBarHeight(40f);
             com.lowagie.text.Image imgBarcode = barcode.createImageWithBarcode(cb, null, null);
             imgBarcode.setAlignment(Element.ALIGN_RIGHT);
-            
             PdfPCell cellBarcode = new PdfPCell(imgBarcode, false);
             cellBarcode.setBorder(Rectangle.NO_BORDER);
             cellBarcode.setHorizontalAlignment(Element.ALIGN_RIGHT);
@@ -827,7 +964,6 @@ public class PenjualanPanel extends JPanel {
             PdfPTable itemTable = new PdfPTable(5);
             itemTable.setWidthPercentage(100);
             itemTable.setWidths(new float[]{0.5f, 3f, 1f, 1.5f, 1.5f});
-
             String[] headers = {"No", "Deskripsi / Nama Produk", "Qty", "Harga Satuan", "Total Harga"};
             for (String h : headers) {
                 PdfPCell c = new PdfPCell(new Phrase(h, fBold));
@@ -849,29 +985,24 @@ public class PenjualanPanel extends JPanel {
                 ps.setInt(1, idPenjualan);
                 java.sql.ResultSet rs = ps.executeQuery();
                 while (rs.next()) {
-                    // 1. Kolom Nomor
                     PdfPCell cNo = new PdfPCell(new Phrase(String.valueOf(no++), fNormal));
                     cNo.setPadding(6);
                     itemTable.addCell(cNo);
                     
-                    // 2. Kolom Nama Produk
                     PdfPCell cNama = new PdfPCell(new Phrase(rs.getString("nama_produk"), fNormal));
                     cNama.setPadding(6);
                     itemTable.addCell(cNama);
                     
-                    // 3. Kolom Qty
                     PdfPCell cQty = new PdfPCell(new Phrase(String.valueOf(rs.getInt("qty")), fNormal));
                     cQty.setHorizontalAlignment(Element.ALIGN_CENTER);
                     cQty.setPadding(6);
                     itemTable.addCell(cQty);
                     
-                    // 4. Kolom Harga Satuan
                     PdfPCell cHarga = new PdfPCell(new Phrase(rp.format(rs.getDouble("harga_satuan")).replace(",00",""), fNormal));
                     cHarga.setHorizontalAlignment(Element.ALIGN_RIGHT); 
                     cHarga.setPadding(6);
                     itemTable.addCell(cHarga);
                     
-                    // 5. Kolom Subtotal
                     PdfPCell cSub = new PdfPCell(new Phrase(rp.format(rs.getDouble("subtotal")).replace(",00",""), fNormal));
                     cSub.setHorizontalAlignment(Element.ALIGN_RIGHT); 
                     cSub.setPadding(6);
@@ -892,7 +1023,6 @@ public class PenjualanPanel extends JPanel {
             addTotalRow(totalTable, "Kembalian", kembali, fNormal, fNormal, rp);
 
             document.add(totalTable);
-
             document.add(new Paragraph("\n\n"));
             Paragraph footer = new Paragraph("Terima kasih telah berbelanja di Decium Perfumery.\nBarang yang sudah dibeli tidak dapat ditukar atau dikembalikan.", fSmall);
             footer.setAlignment(Element.ALIGN_CENTER);
@@ -902,7 +1032,6 @@ public class PenjualanPanel extends JPanel {
             
             JOptionPane.showMessageDialog(this, "Invoice PDF berhasil dibuat!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
             Desktop.getDesktop().open(fileToSave);
-
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Gagal mencetak PDF: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }

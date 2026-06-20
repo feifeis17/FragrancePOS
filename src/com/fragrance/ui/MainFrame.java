@@ -1,6 +1,7 @@
 package com.fragrance.ui;
 
 import com.fragrance.panel.CetakBarcodePanel;
+import com.fragrance.panel.DisplayProdukPanel;
 import com.fragrance.panel.KategoriPanel;
 import com.fragrance.panel.LaporanPanel;
 import com.fragrance.panel.LogUserPanel;
@@ -67,7 +68,7 @@ public class MainFrame extends JFrame {
             lblFallback.setFont(new Font("Segoe UI", Font.BOLD, 40));
             screensaverPanel.add(lblFallback, BorderLayout.CENTER);
         }
-//fitur screensaver
+        
         setGlassPane(screensaverPanel);
         int waktuIdle = 30000; 
         idleTimer = new Timer(waktuIdle, e -> jalankanScreensaver());
@@ -107,7 +108,8 @@ public class MainFrame extends JFrame {
         sidebar.setBackground(ThemeConfig.BG_SIDEBAR);
         sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
         sidebar.setBorder(new EmptyBorder(24, 8, 16, 8));
-// Profil User
+        
+        // Profil User
         JPanel profilePanel = new JPanel();
         profilePanel.setOpaque(false);
         profilePanel.setLayout(new BoxLayout(profilePanel, BoxLayout.Y_AXIS));
@@ -136,7 +138,8 @@ public class MainFrame extends JFrame {
         sidebar.add(Box.createVerticalStrut(16));
         sidebar.add(sep);
         sidebar.add(Box.createVerticalStrut(10));
-// MASTER
+        
+        // MASTER
         sidebar.add(sectionLabel("MASTER"));
         btnProduk    = createMenuButton("produk",    "Produk");
         btnSupplier  = createMenuButton("supplier",  "Supplier");
@@ -147,7 +150,8 @@ public class MainFrame extends JFrame {
         sidebar.add(btnLaporan);
         sidebar.add(btnKategori);
         sidebar.add(Box.createVerticalStrut(4));
-// TRANSAKSI
+        
+        // TRANSAKSI
         sidebar.add(sectionLabel("TRANSAKSI"));
         btnKasir     = createMenuButton("kasir",     "Kasir");
         btnStokMasuk = createMenuButton("stok",      "Stok Masuk");
@@ -158,7 +162,8 @@ public class MainFrame extends JFrame {
         sidebar.add(btnPenjualan);
         sidebar.add(btnPelanggan);
         sidebar.add(Box.createVerticalStrut(4));
-// UTILITAS
+        
+        // UTILITAS
         sidebar.add(sectionLabel("UTILITAS"));
         btnCetakBarcode  = createMenuButton("barcode",  "Cetak Barcode");
         btnUserMenu      = createMenuButton("user",     "Manajemen User");
@@ -166,8 +171,17 @@ public class MainFrame extends JFrame {
         sidebar.add(btnCetakBarcode);
         sidebar.add(btnUserMenu);
         sidebar.add(btnLogUser);
-// ActionListeners
-        btnProduk.addActionListener(e -> switchPanel(new ProdukPanel(), "Data Produk", "File Master › Produk", btnProduk));
+
+        btnProduk.addActionListener(e -> {
+            if (SessionManager.getRole().equalsIgnoreCase("User")) {
+                // Tampilan khusus User (Katalog Gambar & Scan Harga)
+                switchPanel(new DisplayProdukPanel(), "Katalog Digital", "Layar Display Pembeli", btnProduk);
+            } else {
+                // Tampilan Admin / Operator (Tabel & Edit Data)
+                switchPanel(new ProdukPanel(), "Data Produk", "File Master › Produk", btnProduk);
+            }
+        });
+        
         btnSupplier.addActionListener(e -> switchPanel(new SupplierPanel(), "Data Supplier", "File Master › Supplier", btnSupplier));
         btnKategori.addActionListener(e -> switchPanel(new KategoriPanel(), "Data Kategori", "File Master › Kategori", btnKategori));
         btnPelanggan.addActionListener(e -> switchPanel(new PelangganPanel(), "Data Pelanggan", "File Master › Pelanggan", btnPelanggan));
@@ -179,7 +193,8 @@ public class MainFrame extends JFrame {
         btnLaporan.addActionListener(e -> switchPanel(new LaporanPanel(), "Laporan Analitik", "Transaksi › Laporan Bisnis", btnLaporan));
         btnCetakBarcode.addActionListener(e -> switchPanel(new CetakBarcodePanel(), "Cetak Barcode Produk", "Utilitas › Cetak Barcode", btnCetakBarcode));
         sidebar.add(Box.createVerticalGlue());
-// Logout
+        
+        // Logout
         JSeparator sepBottom = new JSeparator();
         sepBottom.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
         sepBottom.setForeground(new Color(0x2A, 0x28, 0x48));
@@ -197,7 +212,8 @@ public class MainFrame extends JFrame {
 
         return sidebar;
     }
-// MAIN CONTENT
+    
+    // MAIN CONTENT
     private JPanel buildMainContent() {
         JPanel wrapper = new JPanel(new BorderLayout());
         wrapper.setBackground(ThemeConfig.BG_PRIMARY);
@@ -222,7 +238,8 @@ public class MainFrame extends JFrame {
         titleStack.add(lblHeaderTitle);
         titleStack.add(Box.createVerticalStrut(2));
         titleStack.add(lblSubtitle);
-//Logo di pojok kanan
+        
+        // Logo di pojok kanan
         JLabel lblLogoAtas = new JLabel();
         java.net.URL logoUrl = getClass().getResource("/com/fragrance/resources/icons/logo_decium.png");
         if(logoUrl != null) {
@@ -235,14 +252,15 @@ public class MainFrame extends JFrame {
         
         wrapper.add(headerBar, BorderLayout.NORTH);
         
-// Area konten panel
+        // Area konten panel
         contentPanel = new JPanel(new BorderLayout());
         contentPanel.setBackground(ThemeConfig.BG_PRIMARY);
         wrapper.add(contentPanel, BorderLayout.CENTER);
 
         return wrapper;
     }
-// PANEL SWITCHING
+    
+    // PANEL SWITCHING
     public void switchPanel(JPanel panel, String title, String subtitle, JButton sourceBtn) {
         lblHeaderTitle.setText(title);
         lblSubtitle.setText(subtitle);
@@ -268,7 +286,7 @@ public class MainFrame extends JFrame {
         contentPanel.repaint();
     }
 
-// HELPERS SIDEBAR
+    // HELPERS SIDEBAR
     private JLabel sectionLabel(String text) {
         JLabel l = new JLabel(text);
         l.setFont(new Font("Segoe UI", Font.BOLD, 10));
@@ -345,15 +363,21 @@ public class MainFrame extends JFrame {
         });
         return btn;
     }
-// RBAC
+
+    // RBAC (ROLE-BASED ACCESS CONTROL)
     private void applyRBAC() {
         String role = SessionManager.getRole();
-        if (role.equals("Operator")) {
+        if (role.equalsIgnoreCase("Operator")) {
+            // --- KASIR SUNGGUHAN ---
+            // YANG DISEMBUNYIKAN (Hak Akses Admin Saja):
             btnSupplier.setVisible(false);
             btnKategori.setVisible(false);
-            btnPelanggan.setVisible(false);
-            btnLogUser.setVisible(false);
-        } else if (role.equals("User")) {
+            btnStokMasuk.setVisible(false); // Kasir tidak ngurusin kulakan/tambah stok
+            btnLaporan.setVisible(false);   // Kasir tidak boleh lihat total omzet/keuangan
+            btnUserMenu.setVisible(false);  // Kasir tidak boleh edit/tambah password user
+            btnLogUser.setVisible(false);   // Kasir tidak perlu lihat log sistem
+        } else if (role.equalsIgnoreCase("User")) {
+            // --- LAYAR DISPLAY PEMBELI (KIOSK) ---
             btnSupplier.setVisible(false);
             btnKategori.setVisible(false);
             btnPelanggan.setVisible(false);
@@ -365,17 +389,30 @@ public class MainFrame extends JFrame {
             btnLaporan.setVisible(false);
             btnCetakBarcode.setVisible(false);
         }
+        // Jika Admin, tidak ada yang di-set false (buka semua)
     }
-// LOGOUT + LOG KE DB
     private void doLogout() {
-        int confirm = JOptionPane.showConfirmDialog(
-            this,
-            "Yakin ingin keluar dari sistem?",
-            "Konfirmasi Logout",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.QUESTION_MESSAGE
-        );
-        if (confirm != JOptionPane.YES_OPTION) return;
+        // Jika yang login adalah User (Kios Display), minta PIN Admin!
+        if (SessionManager.getRole().equalsIgnoreCase("User")) {
+            JPasswordField pwd = new JPasswordField(10);
+            pwd.setFont(new Font("Segoe UI", Font.PLAIN, 18));
+            pwd.setHorizontalAlignment(SwingConstants.CENTER);
+            
+            Object[] message = {
+                "Masukkan PIN Admin untuk mematikan Kios:", pwd
+            };
+            
+            int action = JOptionPane.showConfirmDialog(this, message, "Otorisasi Keamanan", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
+            
+            // Contoh: PIN hardcode "12345".
+            if (action != JOptionPane.OK_OPTION || !new String(pwd.getPassword()).equals("12345")) {
+                JOptionPane.showMessageDialog(this, "Akses Ditolak! PIN Salah.", "Keamanan Sistem", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        } else {
+            int confirm = JOptionPane.showConfirmDialog(this, "Yakin ingin keluar dari sistem?", "Konfirmasi Logout", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+            if (confirm != JOptionPane.YES_OPTION) return;
+        }
         
         try (Connection conn = Koneksi.configDB();
              PreparedStatement ps = conn.prepareStatement(
