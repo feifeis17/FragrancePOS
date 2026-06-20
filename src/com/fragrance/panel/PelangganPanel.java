@@ -4,14 +4,13 @@ import com.fragrance.util.Koneksi;
 import com.fragrance.util.RoundedPanel;
 import com.fragrance.util.SessionManager;
 import com.fragrance.util.ThemeConfig;
-
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import javax.swing.table.*;
 import java.awt.*;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.table.*;
 
 public class PelangganPanel extends JPanel {
 
@@ -27,6 +26,7 @@ public class PelangganPanel extends JPanel {
         initUI();
         loadData();
     }
+
 //ui
     private void initUI() {
         add(buildTopBar(), BorderLayout.NORTH);
@@ -57,7 +57,6 @@ public class PelangganPanel extends JPanel {
             public void removeUpdate(javax.swing.event.DocumentEvent e)  { filterTable(); }
             public void changedUpdate(javax.swing.event.DocumentEvent e) { filterTable(); }
         });
-
         JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         left.setOpaque(false);
         left.add(txtSearch);
@@ -65,7 +64,8 @@ public class PelangganPanel extends JPanel {
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         right.setOpaque(false);
 
-        if (SessionManager.isAdmin()) {
+        String role = SessionManager.getRole();
+        if (role.equalsIgnoreCase("Admin") || role.equalsIgnoreCase("Operator")) {
             JButton btnTambah = goldButton("+ Tambah");
             btnTambah.addActionListener(e -> showFormDialog(false));
 
@@ -74,24 +74,27 @@ public class PelangganPanel extends JPanel {
                 if (getSelectedId() == -1) { showInfo("Pilih pelanggan yang ingin diedit."); return; }
                 showFormDialog(true);
             });
-
-            JButton btnHapus = dangerButton("Hapus");
-            btnHapus.addActionListener(e -> doDelete());
-
+            
             right.add(btnTambah);
             right.add(btnEdit);
-            right.add(btnHapus);
+            
+            // Tombol Hapus HANYA muncul untuk Admin
+            if (role.equalsIgnoreCase("Admin")) {
+                JButton btnHapus = dangerButton("Hapus");
+                btnHapus.addActionListener(e -> doDelete());
+                right.add(btnHapus);
+            }
         }
+        // ========================================================
 
         JButton btnRefresh = outlineButton(""); 
-        btnRefresh.setPreferredSize(new Dimension(36, 36)); 
+        btnRefresh.setPreferredSize(new Dimension(36, 36));
         btnRefresh.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(0x3D, 0x3B, 0x60), 1, true),
             BorderFactory.createEmptyBorder(9, 9, 9, 9) 
         ));
         ImageIcon icRefreshW = loadScaledIcon("segarkan_w.png", 16);
         ImageIcon icRefreshG = loadScaledIcon("segarkan_g.png", 16);
-
         if (icRefreshW != null) {
             btnRefresh.setIcon(icRefreshW);
         }
@@ -101,6 +104,7 @@ public class PelangganPanel extends JPanel {
             }
             @Override public void mouseExited(java.awt.event.MouseEvent e) {
                 if (icRefreshW != null) btnRefresh.setIcon(icRefreshW);
+    
             }
         });
 
@@ -115,7 +119,8 @@ public class PelangganPanel extends JPanel {
     private JScrollPane buildTableArea() {
         String[] cols = {"ID", "Nama Pelanggan", "Kontak", "Total Transaksi"};
         tableModel = new DefaultTableModel(cols, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
+            @Override public boolean isCellEditable(int r, int c) { return false;
+            }
         };
 
         table = new JTable(tableModel);
@@ -123,7 +128,6 @@ public class PelangganPanel extends JPanel {
 
         table.getColumnModel().getColumn(0).setMinWidth(0);
         table.getColumnModel().getColumn(0).setMaxWidth(0);
-
         JScrollPane sp = new JScrollPane(table);
         sp.setBackground(ThemeConfig.BG_TABLE);
         sp.getViewport().setBackground(ThemeConfig.BG_TABLE);
@@ -142,44 +146,42 @@ public class PelangganPanel extends JPanel {
         table.setSelectionForeground(ThemeConfig.ACCENT);
         table.setIntercellSpacing(new Dimension(0, 0));
         table.setBorder(BorderFactory.createEmptyBorder());
-
         JTableHeader header = table.getTableHeader();
         header.setBackground(new Color(0x1E, 0x1D, 0x38));
         header.setForeground(ThemeConfig.TEXT_MUTED);
         header.setFont(new Font("Segoe UI", Font.BOLD, 11));
         header.setPreferredSize(new Dimension(0, 38));
-
         table.getColumnModel().getColumn(1).setCellRenderer(new DefaultTableCellRenderer() {
             { setBorder(new EmptyBorder(0, 14, 0, 0)); setBackground(ThemeConfig.BG_TABLE); }
             @Override public Component getTableCellRendererComponent(
                     JTable t, Object val, boolean sel, boolean foc, int r, int c) {
                 JLabel l = (JLabel) super.getTableCellRendererComponent(t, val, sel, foc, r, c);
-                l.setForeground(ThemeConfig.TEXT_HEAD);
+       
+                 l.setForeground(ThemeConfig.TEXT_HEAD);
                 return l;
             }
         });
-
         DefaultTableCellRenderer padLeft = new DefaultTableCellRenderer() {
             { setBorder(new EmptyBorder(0, 14, 0, 0));
               setBackground(ThemeConfig.BG_TABLE);
               setForeground(ThemeConfig.TEXT_BODY); }
         };
         table.getColumnModel().getColumn(2).setCellRenderer(padLeft);
-
         table.getColumnModel().getColumn(3).setCellRenderer(new DefaultTableCellRenderer() {
             @Override public Component getTableCellRendererComponent(
                     JTable t, Object val, boolean sel, boolean foc, int r, int c) {
                 JLabel l = (JLabel) super.getTableCellRendererComponent(t, val, sel, foc, r, c);
                 l.setHorizontalAlignment(CENTER);
+          
                 l.setBackground(ThemeConfig.BG_TABLE);
                 l.setFont(new Font("Segoe UI", Font.BOLD, 13));
                 int total = val != null ? Integer.parseInt(val.toString()) : 0;
                 l.setForeground(total > 0 ? ThemeConfig.ACCENT : ThemeConfig.TEXT_MUTED);
                 l.setText(total > 0 ? total + "x" : "—");
-                return l;
+   
+                 return l;
             }
         });
-
         table.getColumnModel().getColumn(0).setPreferredWidth(0);
         table.getColumnModel().getColumn(1).setPreferredWidth(280);
         table.getColumnModel().getColumn(2).setPreferredWidth(180);
@@ -194,14 +196,17 @@ public class PelangganPanel extends JPanel {
                      ResultSet rs = conn.createStatement().executeQuery(
                          "SELECT p.id_pelanggan, p.nama_pelanggan, " +
                          "COALESCE(p.kontak, '-') AS kontak, " +
+             
                          "COUNT(pj.id_penjualan) AS total_transaksi " +
                          "FROM tb_pelanggan p " +
                          "LEFT JOIN tb_penjualan pj ON p.id_pelanggan = pj.id_pelanggan " +
+                     
                          "GROUP BY p.id_pelanggan, p.nama_pelanggan, p.kontak " +
                          "ORDER BY p.nama_pelanggan")) {
                     while (rs.next()) rows.add(new Object[]{
                         rs.getInt("id_pelanggan"),
-                        rs.getString("nama_pelanggan"),
+               
+                         rs.getString("nama_pelanggan"),
                         rs.getString("kontak"),
                         rs.getInt("total_transaksi")
                     });
@@ -212,7 +217,8 @@ public class PelangganPanel extends JPanel {
                 try {
                     tableModel.setRowCount(0);
                     for (Object[] row : get()) tableModel.addRow(row);
-                } catch (Exception e) { e.printStackTrace(); }
+                } catch (Exception e) { e.printStackTrace();
+                }
             }
         }.execute();
     }
@@ -227,7 +233,6 @@ public class PelangganPanel extends JPanel {
         JPanel content = new JPanel(new BorderLayout());
         content.setBackground(ThemeConfig.BG_PRIMARY);
         content.setBorder(new EmptyBorder(24, 28, 20, 28));
-
         txtNama   = formField();
         txtKontak = formField();
 
@@ -238,16 +243,13 @@ public class PelangganPanel extends JPanel {
         GridBagConstraints g = new GridBagConstraints();
         g.fill = GridBagConstraints.HORIZONTAL;
         g.insets = new Insets(0, 0, 12, 0);
-
         addRow(form, g, 0, "Nama Pelanggan *", txtNama);
         addRow(form, g, 1, "No. Kontak",       txtKontak);
-
         content.add(form, BorderLayout.CENTER);
 
         JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         btnRow.setOpaque(false);
         btnRow.setBorder(new EmptyBorder(12, 0, 0, 0));
-
         JButton btnBatal  = outlineButton("Batal");
         JButton btnSimpan = goldButton("Simpan");
         btnBatal.addActionListener(e -> dialog.dispose());
@@ -266,7 +268,8 @@ public class PelangganPanel extends JPanel {
 
     private void addRow(JPanel p, GridBagConstraints g, int row,
                         String label, JComponent field) {
-        g.gridx = 0; g.gridy = row; g.weightx = 0;
+        g.gridx = 0;
+        g.gridy = row; g.weightx = 0;
         JLabel l = new JLabel(label);
         l.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         l.setForeground(ThemeConfig.TEXT_BODY);
@@ -288,7 +291,8 @@ public class PelangganPanel extends JPanel {
                 txtNama.setText(rs.getString("nama_pelanggan"));
                 txtKontak.setText(rs.getString("kontak") != null ? rs.getString("kontak") : "");
             }
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) { e.printStackTrace();
+        }
     }
 // CRUD
     private void doSave(JDialog dialog, boolean isEdit) {
@@ -299,10 +303,10 @@ public class PelangganPanel extends JPanel {
             return;
         }
         String kontak = txtKontak.getText().trim();
-
         try (Connection conn = Koneksi.configDB()) {
             String sql = isEdit
-                ? "UPDATE tb_pelanggan SET nama_pelanggan=?, kontak=? WHERE id_pelanggan=?"
+                ?
+                "UPDATE tb_pelanggan SET nama_pelanggan=?, kontak=? WHERE id_pelanggan=?"
                 : "INSERT INTO tb_pelanggan (nama_pelanggan, kontak) VALUES (?, ?)";
 
             PreparedStatement ps = conn.prepareStatement(sql);
@@ -323,7 +327,8 @@ public class PelangganPanel extends JPanel {
 
     private void doDelete() {
         int id = getSelectedId();
-        if (id == -1) { showInfo("Pilih pelanggan yang ingin dihapus."); return; }
+        if (id == -1) { showInfo("Pilih pelanggan yang ingin dihapus."); return;
+        }
 
         try (Connection conn = Koneksi.configDB();
              PreparedStatement cek = conn.prepareStatement(
@@ -334,7 +339,8 @@ public class PelangganPanel extends JPanel {
                 int confirm = JOptionPane.showConfirmDialog(this,
                     "Pelanggan ini memiliki riwayat transaksi.\n" +
                     "Data penjualan terkait akan diset ke pelanggan umum (null).\n" +
-                    "Lanjutkan hapus?",
+                 
+                   "Lanjutkan hapus?",
                     "Konfirmasi Hapus", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
                 if (confirm != JOptionPane.YES_OPTION) return;
             } else {
@@ -343,7 +349,8 @@ public class PelangganPanel extends JPanel {
                     "Konfirmasi Hapus", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
                 if (confirm != JOptionPane.YES_OPTION) return;
             }
-        } catch (Exception e) { e.printStackTrace(); return; }
+        } catch (Exception e) { e.printStackTrace(); return;
+        }
 
         try (Connection conn = Koneksi.configDB();
              PreparedStatement ps = conn.prepareStatement(
@@ -389,7 +396,7 @@ public class PelangganPanel extends JPanel {
             Image img = new ImageIcon(url).getImage().getScaledInstance(size, size, Image.SCALE_SMOOTH);
             return new ImageIcon(img);
         } catch (Exception e) { 
-            return null; 
+            return null;
         }
     }
     private JButton goldButton(String text) {
@@ -400,7 +407,6 @@ public class PelangganPanel extends JPanel {
                 if (getModel().isPressed()) g2.setColor(new Color(200, 150, 40)); 
                 else if (getModel().isRollover()) g2.setColor(new Color(255, 210, 80)); 
                 else g2.setColor(ThemeConfig.ACCENT);
-                
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
                 g2.dispose();
                 super.paintComponent(g);
@@ -421,9 +427,9 @@ public class PelangganPanel extends JPanel {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 if (getModel().isPressed()) g2.setColor(new Color(0x1E, 0x1D, 0x38)); // Navy Gelap
-                else if (getModel().isRollover()) g2.setColor(new Color(0x3A, 0x38, 0x60)); // Navy Terang
+                else if (getModel().isRollover()) g2.setColor(new Color(0x3A, 0x38, 0x60));
+                // Navy Terang
                 else g2.setColor(ThemeConfig.BG_CARD);
-                
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
                 g2.dispose();
                 super.paintComponent(g);
@@ -447,7 +453,6 @@ public class PelangganPanel extends JPanel {
                 if (getModel().isPressed()) g2.setColor(new Color(0x30, 0x10, 0x10)); 
                 else if (getModel().isRollover()) g2.setColor(new Color(0x60, 0x2A, 0x2A)); 
                 else g2.setColor(new Color(0x4A, 0x20, 0x20));
-                
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
                 g2.dispose();
                 super.paintComponent(g);

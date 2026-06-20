@@ -42,6 +42,7 @@ public class LaporanPanel extends JPanel {
         loadTransaksiTerbaru();
         loadChartAndCardsData();
     }
+
     private void initUI() {
         JPanel mainContent = new JPanel();
         mainContent.setLayout(new BoxLayout(mainContent, BoxLayout.Y_AXIS));
@@ -64,6 +65,7 @@ public class LaporanPanel extends JPanel {
 
         add(scrollPane, BorderLayout.CENTER);
     }
+
     private JPanel buildTopCardsRow() {
         JPanel row = new JPanel(new GridLayout(1, 4, 16, 0));
         row.setOpaque(false);
@@ -75,7 +77,7 @@ public class LaporanPanel extends JPanel {
         lblTotalOmzet     = statLbl();
         lblTotalPelanggan = statLbl();
 
-        row.add(createMiniCard("TOTAL ITEM TERJUAL", lblTotalItem, new Color(0x4A, 0x90, 0xE2))); 
+        row.add(createMiniCard("TOTAL ITEM TERJUAL", lblTotalItem, new Color(0x4A, 0x90, 0xE2)));
         row.add(createMiniCard("TOTAL TRANSAKSI", lblTotalTransaksi, new Color(0x81, 0xC9, 0x95))); 
         row.add(createMiniCard("TOTAL INCOME", lblTotalOmzet, ThemeConfig.ACCENT)); 
         row.add(createMiniCard("PELANGGAN AKTIF", lblTotalPelanggan, new Color(0xE7, 0x4C, 0x3C))); 
@@ -91,10 +93,13 @@ public class LaporanPanel extends JPanel {
 
         lineDataset = new DefaultCategoryDataset();
         barDataset  = new DefaultCategoryDataset();
+
         ChartPanel cpLine = new ChartPanel(createDarkLineChart(lineDataset, "Tren Penjualan Bulanan"));
         ChartPanel cpBar  = new ChartPanel(createDarkBarChart(barDataset, "Penjualan 7 Hari Terakhir"));
-        cpLine.setOpaque(false); cpLine.setBackground(new Color(0,0,0,0));
-        cpBar.setOpaque(false);  cpBar.setBackground(new Color(0,0,0,0));
+        cpLine.setOpaque(false);
+        cpLine.setBackground(new Color(0,0,0,0));
+        cpBar.setOpaque(false);  
+        cpBar.setBackground(new Color(0,0,0,0));
 
         RoundedPanel pnlLine = new RoundedPanel(12, ThemeConfig.BG_CARD, new Color(0x2A, 0x28, 0x48));
         pnlLine.setBorder(new EmptyBorder(10, 10, 10, 10));
@@ -122,7 +127,7 @@ public class LaporanPanel extends JPanel {
         lblTopProd.setFont(new Font("Segoe UI", Font.BOLD, 14));
         lblTopProd.setForeground(ThemeConfig.TEXT_HEAD);
         pnlTable.add(lblTopProd, BorderLayout.NORTH);
-        
+
         String[] cols = {"No", "Nama Produk", "Harga", "Qty", "Total"};
         modelTopProduk = new DefaultTableModel(cols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
@@ -132,6 +137,7 @@ public class LaporanPanel extends JPanel {
         tblTop.getColumnModel().getColumn(0).setPreferredWidth(30); 
         tblTop.getColumnModel().getColumn(1).setPreferredWidth(180); 
         tblTop.getColumnModel().getColumn(3).setPreferredWidth(40);
+
         JScrollPane spTop = new JScrollPane(tblTop);
         spTop.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
         spTop.getViewport().setBackground(ThemeConfig.BG_CARD);
@@ -140,6 +146,7 @@ public class LaporanPanel extends JPanel {
         pieDataset = new DefaultPieDataset();
         ChartPanel cpPie = new ChartPanel(createDarkPieChart(pieDataset, "Paling Banyak Terjual (Brand)"));
         cpPie.setOpaque(false); cpPie.setBackground(new Color(0,0,0,0));
+
         RoundedPanel pnlPie = new RoundedPanel(12, ThemeConfig.BG_CARD, new Color(0x2A, 0x28, 0x48));
         pnlPie.setBorder(new EmptyBorder(10, 10, 10, 10));
         pnlPie.add(cpPie, BorderLayout.CENTER);
@@ -168,12 +175,12 @@ public class LaporanPanel extends JPanel {
         
         JTable tblRecent = new JTable(modelTransaksiTerbaru);
         styleTable(tblRecent);
-        tblRecent.getColumnModel().getColumn(0).setPreferredWidth(30); // No
-        tblRecent.getColumnModel().getColumn(1).setPreferredWidth(180); // Nama Pembeli
-        tblRecent.getColumnModel().getColumn(2).setPreferredWidth(60); // Jml Item
-        tblRecent.getColumnModel().getColumn(3).setPreferredWidth(120); // Nilai
-        tblRecent.getColumnModel().getColumn(4).setPreferredWidth(130); // Tanggal
-        tblRecent.getColumnModel().getColumn(5).setPreferredWidth(70); // Status
+        tblRecent.getColumnModel().getColumn(0).setPreferredWidth(30);
+        tblRecent.getColumnModel().getColumn(1).setPreferredWidth(180);
+        tblRecent.getColumnModel().getColumn(2).setPreferredWidth(60);
+        tblRecent.getColumnModel().getColumn(3).setPreferredWidth(120);
+        tblRecent.getColumnModel().getColumn(4).setPreferredWidth(130); 
+        tblRecent.getColumnModel().getColumn(5).setPreferredWidth(70);
         
         tblRecent.getColumnModel().getColumn(5).setCellRenderer(new DefaultTableCellRenderer() {
             @Override public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int r, int c) {
@@ -184,7 +191,7 @@ public class LaporanPanel extends JPanel {
                 return l;
             }
         });
-        
+
         JScrollPane spRecent = new JScrollPane(tblRecent);
         spRecent.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
         spRecent.getViewport().setBackground(ThemeConfig.BG_CARD);
@@ -192,6 +199,7 @@ public class LaporanPanel extends JPanel {
 
         return row;
     }
+
     private JLabel statLbl() {
         JLabel l = new JLabel("0");
         l.setFont(new Font("Segoe UI", Font.BOLD, 28));
@@ -223,12 +231,14 @@ public class LaporanPanel extends JPanel {
         tbl.setGridColor(new Color(0x2A, 0x28, 0x48));
         tbl.setSelectionBackground(new Color(0x3A, 0x38, 0x60));
         tbl.setSelectionForeground(ThemeConfig.ACCENT);
+
         JTableHeader h = tbl.getTableHeader();
         h.setBackground(ThemeConfig.BG_PRIMARY);
         h.setForeground(ThemeConfig.TEXT_MUTED);
         h.setFont(new Font("Segoe UI", Font.BOLD, 11));
         h.setPreferredSize(new Dimension(0, 32));
     }
+
     private JFreeChart createDarkLineChart(DefaultCategoryDataset dataset, String title) {
         JFreeChart chart = ChartFactory.createLineChart(title, "", "Omzet (Rp)", dataset, PlotOrientation.VERTICAL, false, true, false);
         chart.setBackgroundPaint(ThemeConfig.BG_CARD);
@@ -248,6 +258,9 @@ public class LaporanPanel extends JPanel {
         LineAndShapeRenderer renderer = (LineAndShapeRenderer) plot.getRenderer();
         renderer.setSeriesPaint(0, new Color(0x4A, 0x90, 0xE2));
         renderer.setSeriesStroke(0, new BasicStroke(3.0f));
+        renderer.setSeriesShapesVisible(0, true); 
+        renderer.setSeriesShapesFilled(0, true);
+        
         return chart;
     }
 
@@ -289,19 +302,25 @@ public class LaporanPanel extends JPanel {
         plot.setLabelOutlinePaint(new Color(0x2A, 0x28, 0x48));
         return chart;
     }
+
+    // =========================================================
+    // DATABASE FETCHING LOGIC (SUDAH DIPERBAIKI 100%)
+    // =========================================================
+
     private void loadTopProduk() {
         new SwingWorker<java.util.List<Object[]>, Void>() {
             @Override
             protected java.util.List<Object[]> doInBackground() throws Exception {
                 java.util.List<Object[]> rows = new java.util.ArrayList<>();
-               String sql = "SELECT p.id_penjualan, " +
-                             "COALESCE(pl.nama_pelanggan, 'Umum / Non-Member') AS nama_pembeli, " +
-                             "(SELECT COALESCE(SUM(qty), 0) FROM tb_detail_penjualan WHERE id_penjualan = p.id_penjualan) AS jml_item, " +
-                             "p.total_harga, " +
-                             "p.tanggal " +
-                             "FROM tb_penjualan p " +
-                             "LEFT JOIN tb_pelanggan pl ON p.id_pelanggan = pl.id_pelanggan " +
-                             "ORDER BY p.tanggal DESC LIMIT 10";
+                
+                String sql = "SELECT p.nama_produk AS nama_barang, " +
+                             "p.harga_jual AS harga_satuan, " +
+                             "COALESCE(SUM(dp.qty), 0) AS total_qty, " +
+                             "COALESCE(SUM(dp.subtotal), 0) AS total_nilai " +
+                             "FROM tb_detail_penjualan dp " +
+                             "JOIN tb_produk p ON dp.id_produk = p.id_produk " +
+                             "GROUP BY p.id_produk, p.nama_produk, p.harga_jual " +
+                             "ORDER BY total_qty DESC LIMIT 10";
                 
                 try (Connection conn = Koneksi.configDB();
                      Statement stmt = conn.createStatement();
@@ -311,10 +330,11 @@ public class LaporanPanel extends JPanel {
                     int no = 1;
 
                     while (rs.next()) {
-                        String nama = rs.getString("nama_produk");
-                        String harga = rp.format(rs.getDouble("harga_jual")).replace(",00", "");
+                        String nama = rs.getString("nama_barang");
+                        String harga = rp.format(rs.getDouble("harga_satuan")).replace(",00", "");
                         int qty = rs.getInt("total_qty");
                         String total = rp.format(rs.getDouble("total_nilai")).replace(",00", "");
+                        
                         rows.add(new Object[]{no++, nama, harga, qty, total});
                     }
                 }
@@ -341,15 +361,14 @@ public class LaporanPanel extends JPanel {
             @Override
             protected java.util.List<Object[]> doInBackground() throws Exception {
                 java.util.List<Object[]> rows = new java.util.ArrayList<>();
+                
                 String sql = "SELECT p.id_penjualan, " +
                              "COALESCE(pl.nama_pelanggan, 'Umum / Non-Member') AS nama_pembeli, " +
-                             "COALESCE(SUM(dp.qty), 0) AS jml_item, " +
+                             "(SELECT COALESCE(SUM(qty), 0) FROM tb_detail_penjualan WHERE id_penjualan = p.id_penjualan) AS jml_item, " +
                              "p.total_harga, " +
                              "p.tanggal " +
                              "FROM tb_penjualan p " +
                              "LEFT JOIN tb_pelanggan pl ON p.id_pelanggan = pl.id_pelanggan " +
-                             "LEFT JOIN tb_detail_penjualan dp ON p.id_penjualan = dp.id_penjualan " +
-                             "GROUP BY p.id_penjualan, pl.nama_pelanggan, p.total_harga, p.tanggal " +
                              "ORDER BY p.tanggal DESC LIMIT 10";
                              
                 try (Connection conn = Koneksi.configDB();

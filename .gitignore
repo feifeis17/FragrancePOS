@@ -4,3 +4,4 @@ bin/
 .factorypath
 .project
 .classpath
+src/com/fragrance/util/AppConfig.java
